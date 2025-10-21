@@ -10,6 +10,9 @@ The app is targeted towards children. Children are organized into groups of 1-3 
 We want to engage children in critical thinking, provide multimodal interaction, multi-user collaboration and incorporate modern technology in the experience to show other uses for it then just passive consumption. The end goal is education rooted in the current exhbition theme. 
 
 ## Team
-Programming, software engineering: Ondřej Sýkora, bachelor student at ČVUT FEL
-Educational supervision, cognitive psychology and text content: Eliška Krahulíková 
-Technical Supervision: MgA. Vojtěch Leischner, PhD.
+* Programming, software engineering
+  * Ondřej Sýkora, bachelor student at ČVUT FEL
+* Educational supervision, cognitive psychology and text content
+  * Eliška Krahulíková 
+* Technical Supervision
+  * MgA. Vojtěch Leischner, PhD.
