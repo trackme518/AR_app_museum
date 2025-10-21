@@ -14,5 +14,5 @@ We want to engage children in critical thinking, provide multimodal interaction,
   * Ondřej Sýkora, bachelor student at ČVUT FEL
 * Educational supervision, cognitive psychology and text content
   * Eliška Krahulíková 
-* Technical Supervision
+* Technical Supervision, project coordination
   * MgA. Vojtěch Leischner, PhD.
