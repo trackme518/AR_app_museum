@@ -1,0 +1,38 @@
+#AI_container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1em;
+    border-radius: 10px;
+}
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#AI_response {
+    margin-bottom: 10px;
+    min-height: 40px;
+    white-space: pre-wrap;
+}
+
+#AI_chat_input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px;
+}
+
+#AI_submit_btn {
+    width: 100%;
+    margin-top: 5px;
+    padding: 5px;
+}
+
+.hide {
+    display: none;
+}
