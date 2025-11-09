@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>AR interactive expo</title>
+        <title>AR interaktivní výstava</title>
         <link href="/css/ARSimulation.css" rel="stylesheet">
     </head>
     <body>

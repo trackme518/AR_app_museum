@@ -1,0 +1,7 @@
+#create_scenario_modal {
+    border: 2px solid black;
+}
+
+.hide {
+    display: none;
+}

@@ -1,5 +1,5 @@
 export function openChat() {
-    document.getElementById('AI_container').classList.remove('hide');
+    document.getElementById("AI_container").classList.remove('hide');
 }
 
 export async function sendPrompt() {
