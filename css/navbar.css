@@ -1,0 +1,73 @@
+/* ====== NAVBAR GLOBÁLNÍ STYL ====== */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10000;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ====== NAVBAR VNITŘNÍ STRUKTURA ====== */
+nav {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0.6em 1.5em;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+}
+
+nav li {
+    display: inline-block;
+}
+
+/* ====== ODKAZY ====== */
+nav a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    font-size: 16px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+nav a:hover {
+    background-color: #4A90E2;
+    color: #fff;
+}
+
+nav a.active {
+    background-color: #4A90E2;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(74,144,226,0.3);
+}
+
+/* ====== ADAPTACE PRO MOBIL ====== */
+@media (max-width: 600px) {
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    nav {
+        padding: 0.8em;
+    }
+}
+
+/* ====== ABY OBSAH NEBYL ZA NAVBAREM ====== */
+body main,
+main {
+    margin-top: 70px;
+}
