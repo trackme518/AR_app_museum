@@ -111,6 +111,32 @@ switch ($action){
         }
         break;
 
+    case 'getScenarioDetails':
+        $id = intval($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(['error' => 'Neplatné ID']);
+            die;
+        }
+
+        $query = $db->prepare("SELECT * FROM scenarios WHERE id = :id");
+        $query->execute([':id' => $id]);
+        $scenario = $query->fetch(PDO::FETCH_ASSOC);
+        if ($scenario) {
+            $query = $db->prepare("SELECT c.id, c.name, c.media, c.typeOfMedia, c.description, c.intro
+                                    FROM characters c
+                                    JOIN scenario_character sc ON c.id = sc.character_id
+                                    WHERE sc.scenario_id = :scenario_id");
+            $query->execute([':scenario_id' => $id]);
+            $characters = $query->fetchAll(PDO::FETCH_ASSOC);
+
+            $scenario['characters'] = $characters;
+
+            echo json_encode($scenario);
+        } else {
+            echo json_encode(['error' => 'Scénář nenalezen']);
+        }
+        break;
+
     default:
         echo json_encode(['error' => 'Neznámá akce']);
         break;

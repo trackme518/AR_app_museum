@@ -10,6 +10,7 @@ $options = get_character_options($db);
 <html>
     <head>
         <title>AR tvorba postavy</title>
+        <link href="/css/navbar.css" rel="stylesheet">
         <link href="/css/characters.css" rel="stylesheet">
     </head>
     <body>

@@ -1,15 +1,16 @@
 import * as THREE from 'https://unpkg.com/three/build/three.module.js';
 
-export function createSprite(material) {
-	const geometry = new THREE.PlaneGeometry(1, 1);
+export function createSprite(material, width = 1, height = 1) {
+	const geometry = new THREE.PlaneGeometry(width, height);
 	const sprite = new THREE.Mesh(geometry, material);
 	sprite.position.set(0, 0, -2);
 	return sprite;
 }
 
-export function createVideoTexture() {
+export function createVideoTexture(mediaPath) {
 	const video = document.createElement('video');
-	video.src = '../resources/output.webm';
+	video.src = mediaPath;
+	video.crossOrigin = 'anonymous';
 	video.loop = true;
 	video.muted = true;
 	video.play();
@@ -28,9 +29,9 @@ export function createVideoTexture() {
 	return {video, material};
 }
 
-export function createImageTexture() {
+export function createImageTexture(mediaPath) {
 	const textureLoader = new THREE.TextureLoader();
-	const texture = textureLoader.load('../resources/billboard.jpeg');
+	const texture = textureLoader.load(mediaPath);
 
 	const material = new THREE.MeshBasicMaterial({
 		map: texture,

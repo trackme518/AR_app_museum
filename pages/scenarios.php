@@ -13,6 +13,7 @@ $characters = get_character_options($db);
 <html>
     <head>
         <title>AR scénáře</title>
+        <link href="/css/navbar.css" rel="stylesheet">
         <link href="/css/scenarios.css" rel="stylesheet">
     </head>
     <body>
