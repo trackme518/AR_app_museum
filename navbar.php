@@ -2,7 +2,7 @@
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <header>
-    <nav>
+    <nav id="header_nav_bar">
         <ul>
             <li><a href="/pages/scenarios.php" class="<?= $current_page === 'scenarios.php' ? 'active' : '' ?>">Seznam scénářů</a></li>
             <li><a href="/pages/characters.php" class="<?= $current_page === 'characters.php' ? 'active' : '' ?>">Seznam postav</a></li>
