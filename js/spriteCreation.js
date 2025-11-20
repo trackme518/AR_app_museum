@@ -13,7 +13,6 @@ export function createVideoTexture(mediaPath) {
 	video.crossOrigin = 'anonymous';
 	video.loop = true;
 	video.muted = true;
-	video.play();
 
 	const videoTexture = new THREE.VideoTexture(video);
 	videoTexture.minFilter = THREE.LinearFilter;

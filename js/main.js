@@ -19,13 +19,40 @@ const renderer = createRenderer(chatContainer);
 handleResize(camera, renderer);
 
 
-//const onSelect = createSelectHandler(renderer.xr.getController(0), sprite, openChat);
-//const controller = setupController(renderer, scene, onSelect);
+// set up controller once and use a dynamic select handler that checks current sprites
+const controllerRef = renderer.xr.getController(0);
+const onSelect = createSelectHandler(controllerRef, () => currentCharacterSprites, (hitSprite) => {
+	// Open chat for the selected sprite. If you want to pass data, store it on sprite.userData
+	openChat();
+});
+const controller = setupController(renderer, scene, onSelect);
 
 renderer.xr.addEventListener('sessionstart', () => {
-	//video.play();
+	for (const v of currentCharacterVideos) {
+		if (v && typeof v.play === 'function') {
+			v.play().catch(err => console.warn('Video play failed on sessionstart', err));
+		}
+	}
 	scenarioSelect.classList.add('hide');
 	headerNavBar.classList.add('hide');
+});
+
+renderer.xr.addEventListener('sessionend', () => {
+	// pause any playing character videos when session ends
+	for (const v of currentCharacterVideos) {
+		try {
+			if (v && typeof v.pause === 'function') v.pause();
+			// optionally clear src so it stops network usage
+			if (v && v.tagName === 'VIDEO') {
+				v.removeAttribute('src');
+				try { v.load(); } catch (e) {}
+			}
+		} catch (e) {
+			console.warn('Error stopping video on sessionend', e);
+		}
+	}
+	scenarioSelect.classList.remove('hide');
+	headerNavBar.classList.remove('hide');
 });
 
 //AISubmitBtn.addEventListener('click', sendPrompt);
@@ -45,6 +72,7 @@ async function fetchScenarioDetails(id) {
 }
 
 let currentCharacterSprites = [];
+let currentCharacterVideos = [];
 
 async function clearCurrentCharacterSprites() {
 	for (const s of currentCharacterSprites) {
@@ -59,32 +87,57 @@ async function clearCurrentCharacterSprites() {
 			console.warn('Error disposing sprite', e);
 		}
 	}
+	// stop and cleanup any created video elements
+	for (const v of currentCharacterVideos) {
+		try {
+			if (v && typeof v.pause === 'function') v.pause();
+			if (v && v.tagName === 'VIDEO') {
+				v.removeAttribute('src');
+				try { v.load(); } catch (e) {}
+			}
+		} catch (e) {
+			console.warn('Error disposing video element', e);
+		}
+	}
+
 	currentCharacterSprites = [];
+	currentCharacterVideos = [];
 }
 
-// rozšířená verze fetch: načte metadata a pro každou postavu s typeOfMedia 'photo' vytvoří sprite
 async function fetchScenarioAndSpawnPhotos(id) {
 	const data = await fetchScenarioDetails(id);
 	if (!data) return null;
 
-	// odstraníme staré sprity
 	await clearCurrentCharacterSprites();
 
 	const chars = Array.isArray(data.characters) ? data.characters : [];
-	const photoChars = chars.filter(c => c.typeOfMedia && typeof c.typeOfMedia === 'string' && c.typeOfMedia.toLowerCase().includes('photo'));
-	if (photoChars.length === 0) return data;
+	// include characters with photo or video media types
+	const mediaChars = chars.filter(c => c.typeOfMedia && typeof c.typeOfMedia === 'string' && (c.typeOfMedia.toLowerCase().includes('photo') || c.typeOfMedia.toLowerCase().includes('video')));
+	if (mediaChars.length === 0) return data;
 
 	const spacing = 0.8;
-	const center = (photoChars.length - 1) / 2;
+	const center = (mediaChars.length - 1) / 2;
 
-	photoChars.forEach((ch, idx) => {
+    mediaChars.forEach((ch, idx) => {
 		const mediaPath = ch.media;
 		if (!mediaPath) return;
 
 		try {
-			const material = createImageTexture(mediaPath);
+			let material;
+			// if video, create video texture (do not autoplay here)
+			if (ch.typeOfMedia && ch.typeOfMedia.toLowerCase().includes('video')) {
+				const {video, material: vidMat} = createVideoTexture(mediaPath);
+				material = vidMat;
+				// keep reference to video so we can play it on sessionstart and cleanup later
+				if (video) currentCharacterVideos.push(video);
+				// if XR session already running, start playback immediately
+				if (renderer.xr && renderer.xr.getSession && renderer.xr.getSession()) {
+					video.play().catch(err => console.warn('Video play failed (immediate)', err));
+				}
+			} else {
+				material = createImageTexture(mediaPath);
+			}
 			const spr = createSprite(material);
-			// position them in a row in front of the camera
 			const x = (idx - center) * spacing;
 			spr.position.set(x, 1.5, -2);
 			scene.add(spr);
@@ -107,7 +160,6 @@ if (scenarioSelect) {
 		fetchScenarioAndSpawnPhotos(id).catch(err => console.error(err));
 	});
 
-	// prefetchnout + spawn aktuální výběr při načtení stránky (volitelné)
 	const initialId = scenarioSelect.value || selectedScenario?.value;
 	if (initialId) fetchScenarioAndSpawnPhotos(initialId).catch(() => {});
 }

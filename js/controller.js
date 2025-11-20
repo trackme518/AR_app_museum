@@ -9,20 +9,32 @@ export function setupController(renderer, scene, onSelect) {
 	return controller;
 }
 
-export function createSelectHandler(controller, sprite, openChat) {
+// createSelectHandler(controller, getSprites, onSelect)
+// - controller: XR controller object (renderer.xr.getController(0))
+// - getSprites: function that returns an array of selectable objects at call time
+// - onSelect: callback invoked with the intersected object (or null) when selection occurs
+export function createSelectHandler(controller, getSprites, onSelect) {
 	const raycaster = new THREE.Raycaster();
 	const tempMatrix = new THREE.Matrix4();
 
-	return function onSelect() {
+	return function onSelectEvent() {
+		const sprites = typeof getSprites === 'function' ? getSprites() : [];
+		if (!sprites || sprites.length === 0) return;
+
 		tempMatrix.identity().extractRotation(controller.matrixWorld);
 
 		raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
 		raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
-		const intersects = raycaster.intersectObject(sprite);
+		const intersects = raycaster.intersectObjects(sprites, true);
 
 		if (intersects.length > 0) {
-		openChat();
+			const hit = intersects[0].object;
+			try {
+				if (typeof onSelect === 'function') onSelect(hit);
+			} catch (e) {
+				console.error('onSelect callback error', e);
+			}
 		}
 	};
 }
