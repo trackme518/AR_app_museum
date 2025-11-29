@@ -33,27 +33,41 @@ export function openChat() {
 
 export async function sendPrompt() {
     try {
-        // URL tvého mock API
-        const url = 'https://192.168.20.51/api/mockApi.php';
-        
-        // Posíláme GET request
+        const baseUrl = 'https://192.168.20.51/api/mockApi.php';
+
+        const context = (typeof window !== 'undefined') ? window.selectedSpriteContext : undefined;
+        const url = context ? `${baseUrl}?context=${encodeURIComponent(JSON.stringify(context))}` : baseUrl;
+
         const response = await fetch(url);
         
-        // Kontrola, jestli je response OK
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        // Parsujeme JSON
         const data = await response.json();
-        
-        // Ukážeme výsledek v konzoli
-        console.log('Data z mock API:', data.text);
-        
-        // Pokud chceš, můžeš je zobrazit v HTML
+        console.log('Data z mock API:', data.text, 'context:', context);
+
         const output = document.getElementById('AI_response');
         if (output) {
-            output.textContent = data.text;
+            try {
+                if (window._chatTypewriterAbort) window._chatTypewriterAbort.v = true;
+            } catch (e) {}
+
+            const token = { v: false };
+            window._chatTypewriterAbort = token;
+
+            const text = typeof data.text === 'string' ? data.text : String(data.text ?? '');
+            (async () => {
+                output.textContent = '';
+                const delay = 25; // ms per character, adjust for speed
+                for (let i = 0; i < text.length; i++) {
+                    if (token.v) break;
+                    output.textContent += text.charAt(i);
+                    await new Promise(r => setTimeout(r, delay));
+                }
+                // clean up token when done
+                if (window._chatTypewriterAbort === token) window._chatTypewriterAbort = null;
+            })();
         }
 
     } catch (error) {

@@ -9,10 +9,6 @@ export function setupController(renderer, scene, onSelect) {
 	return controller;
 }
 
-// createSelectHandler(controller, getSprites, onSelect)
-// - controller: XR controller object (renderer.xr.getController(0))
-// - getSprites: function that returns an array of selectable objects at call time
-// - onSelect: callback invoked with the intersected object (or null) when selection occurs
 export function createSelectHandler(controller, getSprites, onSelect) {
 	const raycaster = new THREE.Raycaster();
 	const tempMatrix = new THREE.Matrix4();

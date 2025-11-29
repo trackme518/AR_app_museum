@@ -22,8 +22,12 @@ handleResize(camera, renderer);
 // set up controller once and use a dynamic select handler that checks current sprites
 const controllerRef = renderer.xr.getController(0);
 const onSelect = createSelectHandler(controllerRef, () => currentCharacterSprites, (hitSprite) => {
-	// Open chat for the selected sprite. If you want to pass data, store it on sprite.userData
 	openChat();
+	try {
+		window.selectedSpriteContext = hitSprite && hitSprite.userData ? hitSprite.userData : undefined;
+	} catch (e) {
+		console.error('setting selectedSpriteContext error', e);
+	}
 });
 const controller = setupController(renderer, scene, onSelect);
 
@@ -42,7 +46,6 @@ renderer.xr.addEventListener('sessionend', () => {
 	for (const v of currentCharacterVideos) {
 		try {
 			if (v && typeof v.pause === 'function') v.pause();
-			// optionally clear src so it stops network usage
 			if (v && v.tagName === 'VIDEO') {
 				v.removeAttribute('src');
 				try { v.load(); } catch (e) {}
@@ -55,9 +58,6 @@ renderer.xr.addEventListener('sessionend', () => {
 	headerNavBar.classList.remove('hide');
 });
 
-//AISubmitBtn.addEventListener('click', sendPrompt);
-
-/* new functions */
 async function fetchScenarioDetails(id) {
 	try {
 		const res = await fetch(`/php/save_scenario.php?action=getScenarioDetails&id=${encodeURIComponent(id)}`);
@@ -87,7 +87,6 @@ async function clearCurrentCharacterSprites() {
 			console.warn('Error disposing sprite', e);
 		}
 	}
-	// stop and cleanup any created video elements
 	for (const v of currentCharacterVideos) {
 		try {
 			if (v && typeof v.pause === 'function') v.pause();
@@ -111,11 +110,10 @@ async function fetchScenarioAndSpawnPhotos(id) {
 	await clearCurrentCharacterSprites();
 
 	const chars = Array.isArray(data.characters) ? data.characters : [];
-	// include characters with photo or video media types
 	const mediaChars = chars.filter(c => c.typeOfMedia && typeof c.typeOfMedia === 'string' && (c.typeOfMedia.toLowerCase().includes('photo') || c.typeOfMedia.toLowerCase().includes('video')));
 	if (mediaChars.length === 0) return data;
 
-	const spacing = 0.8;
+	const spacing = 2.2;
 	const center = (mediaChars.length - 1) / 2;
 
     mediaChars.forEach((ch, idx) => {
@@ -124,13 +122,10 @@ async function fetchScenarioAndSpawnPhotos(id) {
 
 		try {
 			let material;
-			// if video, create video texture (do not autoplay here)
 			if (ch.typeOfMedia && ch.typeOfMedia.toLowerCase().includes('video')) {
 				const {video, material: vidMat} = createVideoTexture(mediaPath);
 				material = vidMat;
-				// keep reference to video so we can play it on sessionstart and cleanup later
 				if (video) currentCharacterVideos.push(video);
-				// if XR session already running, start playback immediately
 				if (renderer.xr && renderer.xr.getSession && renderer.xr.getSession()) {
 					video.play().catch(err => console.warn('Video play failed (immediate)', err));
 				}
@@ -139,7 +134,7 @@ async function fetchScenarioAndSpawnPhotos(id) {
 			}
 			const spr = createSprite(material);
 			const x = (idx - center) * spacing;
-			spr.position.set(x, 1.5, -2);
+			spr.position.set(x, 0.9, -1.8);
 			scene.add(spr);
 			currentCharacterSprites.push(spr);
 		} catch (e) {
@@ -164,7 +159,16 @@ if (scenarioSelect) {
 	if (initialId) fetchScenarioAndSpawnPhotos(initialId).catch(() => {});
 }
 
-/* end new functions */
+if (AISubmitBtn) {
+
+	AISubmitBtn.addEventListener('click', () => {
+		try {
+			sendPrompt();
+		} catch (e) {
+			console.error('Error calling sendPrompt from AISubmitBtn', e);
+		}
+	});
+}
 
 function render() {
 	for (const spr of currentCharacterSprites) {
