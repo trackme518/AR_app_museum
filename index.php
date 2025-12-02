@@ -8,7 +8,7 @@
     <body>
         <?php include 'navbar.php';?>
         <main>
-            <h1>Temporary main page</h1>
+            <h1>Tmp main page</h1>
         </main>
     </body>
 </html>
