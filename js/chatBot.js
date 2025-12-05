@@ -1,5 +1,65 @@
-export function openChat() {
-    document.getElementById("AI_container").classList.remove('hide');
+export function openChat(data) {
+    const container = document.getElementById("AI_container");
+    if (!container) return;
+
+    container.classList.remove('hide');
+    const output = document.getElementById('AI_response');
+    if (!output) return;
+
+    if (data && data.introduction) {
+        const text = typeof data.introduction === 'string' ? data.introduction : String(data.introduction ?? '');
+        typewriterEffect(output, text, 25);
+    }
+}
+
+let _currentTypewriterToken = null;
+
+function typewriterEffect(element, text, speed = 25) {
+    if (!element) return null;
+
+    if (_currentTypewriterToken) _currentTypewriterToken.abort = true;
+
+    const token = { abort: false };
+    _currentTypewriterToken = token;
+
+    (async () => {
+        element.textContent = '';
+        for (let i = 0; i < text.length; i++) {
+            if (token.abort) break;
+            element.textContent += text.charAt(i);
+            await new Promise(r => setTimeout(r, speed));
+        }
+        if (_currentTypewriterToken === token) _currentTypewriterToken = null;
+    })();
+
+    return token;
+}
+
+export async function sendPrompt() {
+    try {
+        const baseUrl = 'https://192.168.20.51/api/mockApi.php';
+
+        const context = (typeof window !== 'undefined') ? window.selectedSpriteContext : undefined;
+        const url = context ? `${baseUrl}?context=${encodeURIComponent(JSON.stringify(context))}` : baseUrl;
+
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Data z mock API:', data.text, 'context:', context);
+
+        const output = document.getElementById('AI_response');
+        if (output) {
+            const text = typeof data.text === 'string' ? data.text : String(data.text ?? '');
+            typewriterEffect(output, text, 25);
+        }
+
+    } catch (error) {
+        console.error('Chyba při načítání dat z mock API:', error);
+    }
 }
 
 /*export async function sendPrompt() {
@@ -30,47 +90,3 @@ export function openChat() {
                             "Zpráva: " + err.message;
     }
 }*/
-
-export async function sendPrompt() {
-    try {
-        const baseUrl = 'https://192.168.20.51/api/mockApi.php';
-
-        const context = (typeof window !== 'undefined') ? window.selectedSpriteContext : undefined;
-        const url = context ? `${baseUrl}?context=${encodeURIComponent(JSON.stringify(context))}` : baseUrl;
-
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Data z mock API:', data.text, 'context:', context);
-
-        const output = document.getElementById('AI_response');
-        if (output) {
-            try {
-                if (window._chatTypewriterAbort) window._chatTypewriterAbort.v = true;
-            } catch (e) {}
-
-            const token = { v: false };
-            window._chatTypewriterAbort = token;
-
-            const text = typeof data.text === 'string' ? data.text : String(data.text ?? '');
-            (async () => {
-                output.textContent = '';
-                const delay = 25; // ms per character, adjust for speed
-                for (let i = 0; i < text.length; i++) {
-                    if (token.v) break;
-                    output.textContent += text.charAt(i);
-                    await new Promise(r => setTimeout(r, delay));
-                }
-                // clean up token when done
-                if (window._chatTypewriterAbort === token) window._chatTypewriterAbort = null;
-            })();
-        }
-
-    } catch (error) {
-        console.error('Chyba při načítání dat z mock API:', error);
-    }
-}

@@ -28,7 +28,10 @@ handleResize(camera, renderer);
 // set up controller once and use a dynamic select handler that checks current sprites
 const controllerRef = renderer.xr.getController(0);
 const onSelect = createSelectHandler(controllerRef, () => currentCharacterSprites, (hitSprite) => {
-	openChat();
+	if (!hitSprite) return;
+
+	const data = hitSprite.userData;
+	openChat(data);
 	try {
 		window.selectedSpriteContext = hitSprite && hitSprite.userData ? hitSprite.userData : undefined;
 	} catch (e) {
@@ -141,6 +144,14 @@ async function fetchScenarioAndSpawnPhotos(id) {
 			const spr = createSprite(material);
 			const x = (idx - center) * spacing;
 			spr.position.set(x, 0.9, -1.8);
+
+			spr.userData = {
+				id: ch.id,
+				name: ch.name,
+				description: ch.description,
+				introduction: ch.intro
+			}
+
 			scene.add(spr);
 			currentCharacterSprites.push(spr);
 		} catch (e) {
