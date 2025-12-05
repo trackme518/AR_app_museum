@@ -29,9 +29,16 @@ function validate_login($username, $password, $pdo){
         ]);
     }
 
+    $query = $pdo->prepare("SELECT role_id FROM role_user WHERE user_id = :user_id LIMIT 1");
+    $query->execute([':user_id' => $user['id']]);
+    $role = $query->fetch(PDO::FETCH_ASSOC);
+
+    $role_id = $role ? $role['role_id'] : 1;
+
     $result['user'] = [
         'id' => $user['id'],
-        'username' => $user['username']
+        'username' => $user['username'],
+        'role_id' => $role_id
     ];
 
     return $result;

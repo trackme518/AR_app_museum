@@ -19,8 +19,9 @@ if (isset($_POST['username']) && isset($_POST['password'])){
     } else{
         $_SESSION['user_id'] = $validation['user']['id'];
         $_SESSION['username'] = $validation['user']['username'];
+        $_SESSION['role_id'] = $validation['user']['role_id'];
         
-        header("Location: tmpSuccess.php");
+        header("Location: /index.php");
         die;
     }
 
@@ -34,7 +35,7 @@ if (isset($_POST['username']) && isset($_POST['password'])){
         <title>Přihlášení</title>
     </head>
     <body>
-        <?php include '../header.php'; ?>
+        <?php include '../navbar.php'; ?>
         <main>
             <h1> Přihlášení </h1>
             <form action="login.php" method="POST">
