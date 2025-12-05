@@ -10,7 +10,13 @@ const selectedScenario = document.getElementById("scenario");
 const chatContainer = document.getElementById("AI_container");
 const AISubmitBtn = document.getElementById("AI_submit_btn");
 const headerNavBar = document.getElementById("header_nav_bar");
+const closeAIDiv = document.getElementById("hide_AI_btn");
 
+function closeAIDivFnc(){
+	chatContainer.classList.add('hide');
+}
+
+closeAIDiv.addEventListener('click', closeAIDivFnc);
 
 const {scene, camera} = createSceneAndCamera();
 
