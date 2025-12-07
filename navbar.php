@@ -6,7 +6,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <header>
     <nav id="header_nav_bar">
-        <ul>
+        <div class="hamburger" id="hamburger_btn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <ul id="nav_menu">
             <li><a href="/index.php" class="<?= $current_page === 'index.php' ? 'active' : '' ?>">AR simulace</a></li>
 
             <?php if (isset($_SESSION['role_id']) && $_SESSION['role_id'] === 1): ?>

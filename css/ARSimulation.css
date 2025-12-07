@@ -8,12 +8,39 @@ body {
 }
 
 canvas {
+    display: none !important;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1;
     width: 100%;
     height: 100%;
+}
+
+.hide {
+    display: none;
+}
+
+/* ====== AR BUTTON ====== */
+#ARButton {
+    display: block !important;
+    margin: 25px auto 0 auto !important;
+    background-color: #4A90E2 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 10px 25px !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s, transform 0.1s !important;
+}
+
+#ARButton:hover {
+    background-color: #3b7bc4 !important;
+}
+
+#ARButton:active {
+    transform: scale(0.97) !important;
 }
 
 /* ====== VÝBĚR SCÉNÁŘE ====== */
@@ -33,6 +60,8 @@ canvas {
 }
 
 #scenario_select select {
+    display: block;
+    margin: 0 auto;
     padding: 10px 15px;
     border-radius: 8px;
     border: 1px solid #ccc;
@@ -67,7 +96,7 @@ canvas {
     display: none;
 }
 
-/* ====== CHAT TEXT A ODESLÁNÍ ====== */
+/* ====== CHAT TEXT ====== */
 #AI_response {
     margin-bottom: 10px;
     min-height: 40px;
@@ -82,7 +111,7 @@ canvas {
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
 }
 
-/* Styl pro „loading“ efekt, když čekáš na odpověď */
+/* Loading efekt */
 #AI_response.loading::after {
     content: "● ● ●";
     animation: dots 1.2s infinite steps(3, end);
@@ -138,15 +167,71 @@ canvas {
     transform: scale(0.98);
 }
 
-/* ====== RESPONSIVITA ====== */
+/* ===========================================================
+   🔥 KOMPLETNÍ RESPONSIVNÍ VERZE PRO MOBIL 🔥
+=========================================================== */
 @media (max-width: 600px) {
-    #AI_container {
-        left: 10px;
-        right: 10px;
-        width: auto;
+
+    /* AR Canvas */
+    canvas {
+        width: 100vw !important;
+        height: 100vh !important;
+    }
+
+    /* AR BUTTON */
+    #ARButton {
+        width: 30% !important;
+        font-size: 18px !important;
+        padding: 14px 0 !important;
+        margin-top: 20px !important;
+    }
+
+    /* Výběr scénáře */
+    #scenario_select {
+        margin-top: 15px;
+        width: 100%;
+        text-align: center;
+    }
+
+    #scenario_select label {
+        font-size: 16px;
+        margin-bottom: 6px;
     }
 
     #scenario_select select {
-        width: 80%;
+        display: block;
+        margin: 0 auto;
+        width: 90%;
+        font-size: 16px;
+        padding: 12px 14px;
+    }
+
+    /* AI CHAT KONTEJNER */
+    #AI_container {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        right: auto !important;
+        width: 90% !important;
+        bottom: 15px !important;
+        padding: 12px !important;
+        border-radius: 12px !important;
+    }
+
+    /* AI RESPONSE */
+    #AI_response {
+        font-size: 15px;
+        max-height: 150px;
+        padding: 12px;
+    }
+
+    /* INPUT + BUTTON */
+    #AI_chat_input {
+        font-size: 15px;
+        padding: 12px;
+    }
+
+    #AI_submit_btn {
+        font-size: 16px;
+        padding: 12px;
     }
 }

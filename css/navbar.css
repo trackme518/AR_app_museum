@@ -12,17 +12,48 @@ header {
     font-family: "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* ====== NAVBAR VNITŘNÍ STRUKTURA ====== */
 nav {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 0.6em 1.5em;
+    padding: 0.8em 1.5em;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
 }
 
+/* ====== HAMBURGER BUTTON ====== */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    z-index: 10001;
+}
+
+.hamburger span {
+    width: 28px;
+    height: 3px;
+    background: #333;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+/* Animace hamburger → X */
+.hamburger.active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+.hamburger.active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* ====== MENU LIST ====== */
 nav ul {
     list-style: none;
     display: flex;
-    justify-content: center;
     gap: 30px;
     margin: 0;
     padding: 0;
@@ -32,7 +63,6 @@ nav li {
     display: inline-block;
 }
 
-/* ====== ODKAZY ====== */
 nav a {
     text-decoration: none;
     color: #333;
@@ -40,39 +70,56 @@ nav a {
     font-size: 16px;
     padding: 8px 14px;
     border-radius: 6px;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 nav a:hover {
     background-color: #4A90E2;
-    color: #fff;
+    color: white;
 }
 
 nav a.active {
     background-color: #4A90E2;
-    color: #fff;
+    color: white;
     box-shadow: 0 2px 8px rgba(74,144,226,0.3);
 }
 
-/* ====== ADAPTACE PRO MOBIL ====== */
+/* ====== RESPONSIVITA – MOBIL ====== */
 @media (max-width: 600px) {
-    nav ul {
-        flex-direction: column;
-        gap: 10px;
+
+    /* hamburger zobrazit */
+    .hamburger {
+        display: flex;
     }
 
-    nav {
-        padding: 0.8em;
+    /* menu schovat defaultně */
+    nav ul {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        flex-direction: column;
+        display: none;
+        gap: 0;
+        background: rgba(255, 255, 255, 0.97);
+        padding: 8px 0;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+
+    /* menu otevřené */
+    nav ul.show {
+        display: flex;
+    }
+
+    nav a {
+        display: block;
+        padding: 14px 20px;
+        text-align: center;
+        font-size: 17px;
     }
 }
 
 /* ====== ABY OBSAH NEBYL ZA NAVBAREM ====== */
-body main,
 main {
-    margin-top: 70px;
-}
-
-/* ====== SKRYTÍ NAVBARU ====== */
-.hide {
-    display: none;
+    margin-top: 80px;
 }

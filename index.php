@@ -10,8 +10,8 @@ $options = get_scenario_options($db);
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8">
         <title>AR interaktivní výstava</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="/css/navbar.css" rel="stylesheet">
         <link href="/css/ARSimulation.css" rel="stylesheet">
     </head>
@@ -34,7 +34,8 @@ $options = get_scenario_options($db);
                 <textarea id="AI_chat_input" rows="3"></textarea>
                 <button id="AI_submit_btn">Odeslat</button>
             </div>
-            <script type="module" src="/js/main.js"></script>
         </main>
+        <script src="/js/navbar.js"></script>
+        <script type="module" src="/js/main.js"></script>
     </body>
 </html>
