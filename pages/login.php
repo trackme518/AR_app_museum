@@ -33,6 +33,8 @@ if (isset($_POST['username']) && isset($_POST['password'])){
 <html lang="cs">
     <head>
         <title>Přihlášení</title>
+        <link href="/css/navbar.css" rel="stylesheet">
+        <link href="/css/global.css" rel="stylesheet">
     </head>
     <body>
         <?php include '../navbar.php'; ?>
@@ -45,7 +47,7 @@ if (isset($_POST['username']) && isset($_POST['password'])){
                 <label for="password">Heslo:</label>
                 <input type="password" id="password" name="password" placeholder="Zadejte heslo" required><br>
 
-                <?php if(isset($error)) echo "<p>{$error}</p>"; ?><br>
+                <?php if(!empty($error)) echo "<p>{$error}</p><br>"; ?>
                 
                 <button type="submit">Přihlásit se</button>
             </form>

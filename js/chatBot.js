@@ -39,6 +39,8 @@ export async function sendPrompt() {
     try {
         const prompt = document.getElementById("AI_chat_input").value.trim();
         if (!prompt) return;
+        
+        document.getElementById("AI_chat_input").value = "";
 
         const responseBox = document.getElementById("AI_response");
 
@@ -72,31 +74,3 @@ export async function sendPrompt() {
                             "Zpráva: " + err.message;
     }
 }
-
-
-/*export async function sendPrompt() {
-    try {
-        const baseUrl = 'https://192.168.20.51/api/mockApi.php';
-
-        const context = (typeof window !== 'undefined') ? window.selectedSpriteContext : undefined;
-        const url = context ? `${baseUrl}?context=${encodeURIComponent(JSON.stringify(context))}` : baseUrl;
-
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Data z mock API:', data.text, 'context:', context);
-
-        const output = document.getElementById('AI_response');
-        if (output) {
-            const text = typeof data.text === 'string' ? data.text : String(data.text ?? '');
-            typewriterEffect(output, text, 25);
-        }
-
-    } catch (error) {
-        console.error('Chyba při načítání dat z mock API:', error);
-    }
-}*/

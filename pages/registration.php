@@ -29,6 +29,8 @@ if (isset($_POST['username']) && isset($_POST['password'])){
 <html>
     <head>
         <title>Registrace</title>
+        <link href="/css/navbar.css" rel="stylesheet">
+        <link href="/css/global.css" rel="stylesheet">
     </head>
     <body>
         <?php include '../navbar.php';?>
@@ -37,17 +39,17 @@ if (isset($_POST['username']) && isset($_POST['password'])){
             <form action="registration.php" method="POST">
                 <label for="username">Uživatelské jméno: </label>
                 <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($username, ENT_QUOTES); ?>" required><br>
-                <?php if(isset($errors['username'])) echo "<p>{$errors['username']}</p>"; ?><br>
+                <?php if(isset($errors['username'])) echo "<p>{$errors['username']}</p><br>"; ?>
 
                 <label for="password">Heslo: </label>
                 <input type="password" name="password" id="password" required><br>
-                <?php if(isset($errors['password'])) echo "<p>{$errors['password']}</p>"; ?><br>
+                <?php if(isset($errors['password'])) echo "<p>{$errors['password']}</p><br>"; ?>
 
                 <label for="confirm_password">Potvrzení hesla: </label>
                 <input type="password" name="confirm_password" id="confirm_password" required><br>
 
                 <button type="submit">Odeslat</button>
-                <?php if(isset($errors['general'])) echo "<p>{$errors['general']}</p>"; ?><br>
+                <?php if(isset($errors['general'])) echo "<p>{$errors['general']}</p><br>"; ?>
             </form>
         </main>
     </body>

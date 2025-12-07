@@ -11,7 +11,7 @@ $options = get_character_options($db);
     <head>
         <title>AR tvorba postavy</title>
         <link href="/css/navbar.css" rel="stylesheet">
-        <link href="/css/characters.css" rel="stylesheet">
+        <link href="/css/global.css" rel="stylesheet">
     </head>
     <body>
         <?php include '../navbar.php';?>
