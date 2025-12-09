@@ -11,15 +11,11 @@ $sql = "CREATE TABLE IF NOT EXISTS characters (
 )";
 $db->exec($sql);
 
-echo "Table 'characters' created successfully";
-
 $sql = "CREATE TABLE IF NOT EXISTS scenarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(32) NOT NULL
 )";
 $db->exec($sql);
-
-echo "Table 'scenarios' created successfully";
 
 $sql = "CREATE TABLE IF NOT EXISTS scenario_character (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,8 +27,6 @@ $sql = "CREATE TABLE IF NOT EXISTS scenario_character (
 )";
 $db->exec($sql);
 
-echo "Table 'scenario_character' created successfully";
-
 $sql = "CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR(16) NOT NULL UNIQUE,
@@ -40,15 +34,11 @@ $sql = "CREATE TABLE IF NOT EXISTS users (
 );";
 $db->exec($sql);
 
-echo "Table 'users' created successfully";
-
 $sql = "CREATE TABLE IF NOT EXISTS roles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     role_name varchar(32) NOT NULL UNIQUE
 )";
 $db->exec($sql);
-
-echo "Table 'roles' created successfully";
 
 $sql = "CREATE TABLE IF NOT EXISTS role_user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,6 +50,6 @@ $sql = "CREATE TABLE IF NOT EXISTS role_user (
 );";
 $db->exec($sql);
 
-echo "Table 'role_user' created successfully";
+echo "Script finished";
 
 ?>

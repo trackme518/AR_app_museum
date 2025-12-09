@@ -12,9 +12,9 @@ function unique_username($username, $pdo){
 function validate_username($username, $pdo){
     if (strlen($username) < 3){
         return "Uživatelské jméno je příliš krátké";
-    } /*else if (!unique_username($username, $pdo)){
+    } else if (!unique_username($username, $pdo)){
         return "Uživatelské jméno je již obsazené";
-    }*/
+    }
     return "";
 }
 
