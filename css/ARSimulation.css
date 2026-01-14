@@ -1,3 +1,12 @@
+/* ====== PROMĚNNÉ (Barvy a nastavení) ====== */
+:root {
+    --primary-color: #4A90E2;       /* Hlavní modrá */
+    --primary-hover: #3b7bc4;       /* Tmavší modrá po najetí */
+    --glass-bg: rgba(255, 255, 255, 0.9); /* Průhledné pozadí chatu */
+    --border-radius: 6px;
+    --transition-speed: 0.2s;
+}
+
 /* ====== ZÁKLADNÍ NASTAVENÍ ====== */
 body {
     font-family: "Segoe UI", Roboto, Arial, sans-serif;
@@ -8,7 +17,7 @@ body {
 }
 
 canvas {
-    display: none !important;
+    display: none !important; /* Původní nastavení */
     position: fixed;
     top: 0;
     left: 0;
@@ -17,33 +26,61 @@ canvas {
     height: 100%;
 }
 
+/* Univerzální skrývací třída */
 .hide {
-    display: none;
+    display: none !important;
 }
 
-/* ====== AR BUTTON ====== */
-#ARButton {
-    display: block !important;
-    margin: 25px auto 0 auto !important;
-    background-color: #4A90E2 !important;
+/* ====== SPOLEČNÉ STYLY (Pro tlačítka a inputy) ====== */
+/* Společný vzhled pro Inputy a Select */
+#AI_chat_input, 
+#scenario_select select {
+    border-radius: var(--border-radius);
+    border: 1px solid #ccc;
+    font-family: inherit;
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+#AI_chat_input:focus, 
+#scenario_select select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74,144,226,0.2);
+    outline: none;
+}
+
+/* Společný základ pro tlačítka (AR i Chat) */
+#ARButton, 
+#AI_submit_btn {
+    background-color: var(--primary-color) !important;
     color: white !important;
     border: none !important;
-    border-radius: 6px !important;
-    padding: 10px 25px !important;
-    font-size: 16px !important;
+    border-radius: var(--border-radius) !important;
     cursor: pointer !important;
-    transition: background-color 0.2s, transform 0.1s !important;
+    transition: background-color var(--transition-speed), transform 0.1s !important;
 }
 
-#ARButton:hover {
-    background-color: #3b7bc4 !important;
+#ARButton:hover, 
+#AI_submit_btn:hover {
+    background-color: var(--primary-hover) !important;
 }
 
-#ARButton:active {
+#ARButton:active, 
+#AI_submit_btn:active {
     transform: scale(0.97) !important;
 }
 
-/* ====== VÝBĚR SCÉNÁŘE ====== */
+/* ====== SPECIFICKÉ PRVKY ====== */
+
+/* AR Button (specifické pozicování) */
+#ARButton {
+    display: block !important;
+    margin: 25px auto 0 auto !important;
+    padding: 10px 25px !important;
+    font-size: 16px !important;
+    z-index: 10; /* Pro jistotu, aby byl nad canvasem */
+}
+
+/* Výběr scénáře */
 #scenario_select {
     position: relative;
     z-index: 2;
@@ -63,61 +100,89 @@ canvas {
     display: block;
     margin: 0 auto;
     padding: 10px 15px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
     background-color: rgba(255, 255, 255, 0.95);
     font-size: 15px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    width: auto;
 }
 
-#scenario_select select:focus {
-    border-color: #4A90E2;
-    box-shadow: 0 0 0 3px rgba(74,144,226,0.2);
-    outline: none;
+#exit_AR_btn {
+    position: absolute; /* Důležité: umožní umístit ho přesně do rohu */
+    top: 60px;          /* Odstup od horního okraje kontejneru */
+    right: 20px;        /* Odstup od pravého okraje (pro levý roh dej 'left: 10px') */
+    
+    width: 30px;        /* Pevná velikost */
+    height: 30px;
+    
+    /* Vzhled - aby vypadalo jako křížek */
+    background: transparent; 
+    border: none;
+    font-weight: bold;
+    font-size: 40px;
+    color: #555;
+    cursor: pointer;
+    z-index: 10001;
+    
+    /* Zarovnání textu (X) na střed tlačítka */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
 }
 
 /* ====== CHAT KONTEJNER (AI) ====== */
 #AI_container {
     position: absolute;
     bottom: 20px;
-    left: 20px;
+    
+    /* === NASTAVENÍ MEZER === */
+    left: 10%;   /* Mezera od levého kraje */
+    right: 10%;  /* Stejná mezera od pravého kraje */
+    width: auto;  /* DŮLEŽITÉ: Nechat na auto, aby se to dopočítalo podle left/right */
+    
+    /* Zbytek zůstává stejný */
     z-index: 9999;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--glass-bg);
     padding: 1em;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     backdrop-filter: blur(5px);
-    width: 320px;
     transition: opacity 0.3s ease, transform 0.3s ease;
+    
+    /* Aby fungovalo zarovnání vnitřku (input a button) */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
+/* Pokud má kontejner třídu .hide, skryje se */
 #AI_container.hide {
-    display: none;
+    display: none !important;
 }
 
-/* ====== CHAT TEXT ====== */
+/* Chat text area */
 #AI_response {
+    margin-top: 20px;
     margin-bottom: 10px;
     min-height: 40px;
     max-height: 200px;
     overflow-y: auto;
     white-space: pre-wrap;
     background: #f7f8fa;
-    border-radius: 6px;
+    border-radius: var(--border-radius);
     padding: 10px;
     font-size: 14px;
     line-height: 1.4;
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
 }
 
-/* Loading efekt */
+/* Loading animace */
 #AI_response.loading::after {
     content: "● ● ●";
     animation: dots 1.2s infinite steps(3, end);
     display: inline-block;
     margin-left: 10px;
-    color: #4A90E2;
+    color: var(--primary-color);
 }
 
 @keyframes dots {
@@ -126,112 +191,72 @@ canvas {
     60%, 100% { content: "● ● ●"; }
 }
 
-/* ====== VSTUPNÍ TEXTAREA ====== */
+/* Vstupní pole chatu */
 #AI_chat_input {
     width: 100%;
     box-sizing: border-box;
     padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-family: inherit;
     font-size: 14px;
     resize: vertical;
-    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-#AI_chat_input:focus {
-    border-color: #4A90E2;
-    box-shadow: 0 0 0 3px rgba(74,144,226,0.2);
-    outline: none;
-}
-
-/* ====== TLAČÍTKO SEND ====== */
+/* Tlačítko odeslat */
 #AI_submit_btn {
-    width: 100%;
-    margin-top: 8px;
+width: 60%; 
+    margin: 8px auto 0 auto; /* 'auto' vlevo a vpravo zajistí vycentrování */
+    
+    display: block; /* Pojistka, aby se chovalo jako blok */
     padding: 8px;
-    border: none;
-    border-radius: 6px;
-    background-color: #4A90E2;
-    color: white;
     font-size: 15px;
+}
+
+#hide_AI_btn {
+    position: absolute; /* Důležité: umožní umístit ho přesně do rohu */
+    top: 10px;          /* Odstup od horního okraje kontejneru */
+    right: 10px;        /* Odstup od pravého okraje (pro levý roh dej 'left: 10px') */
+    
+    width: 30px;        /* Pevná velikost */
+    height: 30px;
+    
+    /* Vzhled - aby vypadalo jako křížek */
+    background: transparent; 
+    border: none;
+    font-weight: bold;
+    font-size: 18px;
+    color: #555;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    z-index: 10001;
+    
+    /* Zarovnání textu (X) na střed tlačítka */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
 }
 
-#AI_submit_btn:hover {
-    background-color: #3b7bc4;
+#hide_AI_btn:hover {
+    color: #000; /* Ztmavnutí při najetí */
+    background: rgba(0,0,0,0.05); /* Jemné pozadí při hover */
+    border-radius: 50%;
 }
 
-#AI_submit_btn:active {
-    transform: scale(0.98);
+/* Styl pro zablokované tlačítko */
+button:disabled, 
+.submit-btn:disabled {
+    opacity: 0.6;              /* Zprůhlednění */
+    background-color: #555;    /* Volitelně: zšednutí pozadí */
+    box-shadow: none !important;
 }
 
-/* ===========================================================
-   🔥 KOMPLETNÍ RESPONSIVNÍ VERZE PRO MOBIL 🔥
-=========================================================== */
+/* Styl pro zablokovaný input */
+input:disabled, 
+textarea:disabled {
+    background-color: #f0f0f0;
+    color: #888;
+    cursor: wait;
+}
+
+/* ====== RESPONZIVITA (Mobil) ====== */
 @media (max-width: 600px) {
-
-    /* AR Canvas */
-    canvas {
-        width: 100vw !important;
-        height: 100vh !important;
-    }
-
-    /* AR BUTTON */
-    #ARButton {
-        width: 30% !important;
-        font-size: 18px !important;
-        padding: 14px 0 !important;
-        margin-top: 20px !important;
-    }
-
-    /* Výběr scénáře */
-    #scenario_select {
-        margin-top: 15px;
-        width: 100%;
-        text-align: center;
-    }
-
-    #scenario_select label {
-        font-size: 16px;
-        margin-bottom: 6px;
-    }
-
-    #scenario_select select {
-        display: block;
-        margin: 0 auto;
-        width: 90%;
-        font-size: 16px;
-        padding: 12px 14px;
-    }
-
-    /* AI CHAT KONTEJNER */
-    #AI_container {
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        right: auto !important;
-        width: 90% !important;
-        bottom: 15px !important;
-        padding: 12px !important;
-        border-radius: 12px !important;
-    }
-
-    /* AI RESPONSE */
-    #AI_response {
-        font-size: 15px;
-        max-height: 150px;
-        padding: 12px;
-    }
-
-    /* INPUT + BUTTON */
-    #AI_chat_input {
-        font-size: 15px;
-        padding: 12px;
-    }
-
-    #AI_submit_btn {
-        font-size: 16px;
-        padding: 12px;
-    }
+    /*TODO*/
 }

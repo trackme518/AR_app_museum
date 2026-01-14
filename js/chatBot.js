@@ -36,13 +36,19 @@ function typewriterEffect(element, text, speed = 25) {
 }
 
 export async function sendPrompt() {
+    const inputField = document.getElementById("AI_chat_input");
+    const submitBtn = document.getElementById("AI_submit_btn");
+    const responseBox = document.getElementById("AI_response");
+    const originalBtnText = submitBtn.innerText;
     try {
-        const prompt = document.getElementById("AI_chat_input").value.trim();
+        const prompt = inputField.value.trim();
         if (!prompt) return;
         
-        document.getElementById("AI_chat_input").value = "";
-
-        const responseBox = document.getElementById("AI_response");
+        inputField.value = "";
+        inputField.disabled = true;
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Čekejte...";
+        submitBtn.classList.add("loading");
 
         const response = await fetch("/api/v1/chat/completions", {
             method: "POST",
@@ -51,7 +57,6 @@ export async function sendPrompt() {
             },
             body: JSON.stringify({
                 model: "local-model",
-                max_tokens: 150,
                 messages: [
                     { role: "system", content: window.systemPrompt || "" },
                     { role: "user", content: prompt }
@@ -72,5 +77,10 @@ export async function sendPrompt() {
         responseBox.innerText = "Nastala chyba při komunikaci s LLM.\n" +
                             "Typ chyby: " + err.name + "\n" +
                             "Zpráva: " + err.message;
+    } finally {
+        inputField.disabled = false;
+        submitBtn.disabled = false;
+        submitBtn.innerText = originalBtnText;
+        submitBtn.classList.remove("loading");
     }
 }
