@@ -1,33 +1,34 @@
-
 <?php
-require __DIR__ . '/php/db.php';
-require __DIR__ . '/php/manage_scenarios.php';
+require_once __DIR__ . '/../backend/scenarios_db.php';
 
 $options = get_scenario_options($db);
-
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
     <head>
-        <title>AR interaktivní výstava</title>
+        <meta charset="UTF-8">
+        <title><?php echo htmlspecialchars($title); ?></title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
         <link href="/css/navbar.css" rel="stylesheet">
         <link href="/css/ARSimulation.css" rel="stylesheet">
     </head>
     <body>
-        <?php include 'navbar.php';?>
+        <?php include __DIR__ . '/../templates/navbar.php'; ?>
+        
         <main>
             <div id="scenario_select">
                 <label for="scenario">Vyberte scénář:</label>
                 <select id="scenario" name="scenario">
                     <?php foreach ($options as $option): ?>
-                        <option value="<?php echo $option['id'] ?>">
+                        <option value="<?php echo htmlspecialchars($option['id']) ?>">
                             <?php echo htmlspecialchars($option['name']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
+            
             <div id="AR_container">
                 <button id="exit_AR_btn" class="hide">X</button>
                 <div id="AI_container" class="hide">
@@ -38,6 +39,7 @@ $options = get_scenario_options($db);
                 </div>
             </div>
         </main>
+        
         <script src="/js/navbar.js"></script>
         <script type="module" src="/js/main.js"></script>
     </body>

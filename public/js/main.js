@@ -1,9 +1,5 @@
 import * as THREE from 'https://unpkg.com/three/build/three.module.js';
-import { createSceneAndCamera } from './sceneSetup.js';
-import { createSprite, createImageTexture, createVideoTexture } from './spriteCreation.js';
-import { createRenderer, handleResize } from './renderer.js';
-import { setupController, createSelectHandler } from './controller.js';
-import { openChat, sendPrompt } from './chatBot.js';
+import { ARButton } from 'https://unpkg.com/three/examples/jsm/webxr/ARButton.js';
 
 const scenarioSelect = document.getElementById("scenario_select");
 const selectedScenario = document.getElementById("scenario");
@@ -36,6 +32,213 @@ contentGroup.visible = false;
 let hasSpawned = false; 
 let hitTestSource = null;
 let hitTestSourceRequested = false;
+
+/* IMPORTED FUNCTIONS TO REFACTOR */
+
+function setupController(renderer, scene, onSelect) {
+	const controller = renderer.xr.getController(0);
+	scene.add(controller);
+
+	controller.addEventListener('select', onSelect);
+
+	return controller;
+}
+
+function createSelectHandler(controller, getSprites, onSelect) {
+	const raycaster = new THREE.Raycaster();
+	const tempMatrix = new THREE.Matrix4();
+
+	return function onSelectEvent() {
+		const sprites = typeof getSprites === 'function' ? getSprites() : [];
+		if (!sprites || sprites.length === 0) return;
+
+		tempMatrix.identity().extractRotation(controller.matrixWorld);
+
+		raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+		raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+
+		const intersects = raycaster.intersectObjects(sprites, true);
+
+		if (intersects.length > 0) {
+			const hit = intersects[0].object;
+			try {
+				if (typeof onSelect === 'function') onSelect(hit);
+			} catch (e) {
+				console.error('onSelect callback error', e);
+			}
+		}
+	};
+}
+
+function createSceneAndCamera() {
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+    scene.add(camera);
+
+    const light = new THREE.DirectionalLight(0xffffff, 0.5);
+    light.position.set(1, 1, 1).normalize();
+    scene.add(light);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+    return {scene, camera};
+}
+
+function createSprite(material, width = 1, height = 1) {
+	const geometry = new THREE.PlaneGeometry(width, height);
+	const sprite = new THREE.Mesh(geometry, material);
+	sprite.position.set(0, 0, -2);
+	return sprite;
+}
+
+function createVideoTexture(mediaPath) {
+	const video = document.createElement('video');
+	video.src = mediaPath;
+	video.crossOrigin = 'anonymous';
+	video.loop = true;
+	video.muted = true;
+
+	const videoTexture = new THREE.VideoTexture(video);
+	videoTexture.minFilter = THREE.LinearFilter;
+	videoTexture.magFilter = THREE.LinearFilter;
+	videoTexture.format = THREE.RGBAFormat;
+
+	const material = new THREE.MeshBasicMaterial({
+		map: videoTexture,
+		transparent: true,
+		side: THREE.DoubleSide,
+	});
+
+	return {video, material};
+}
+
+function createImageTexture(mediaPath) {
+	const textureLoader = new THREE.TextureLoader();
+	const texture = textureLoader.load(mediaPath);
+
+	const material = new THREE.MeshBasicMaterial({
+		map: texture,
+		transparent: true,
+		side: THREE.DoubleSide
+	});
+
+	return material;
+}
+
+function createRenderer(chatContainer) {
+	const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer.xr.enabled = true;
+	document.body.appendChild(renderer.domElement);
+
+	const arButton = ARButton.createButton(renderer, {
+		requiredFeatures: ['hit-test', 'dom-overlay'],
+		domOverlay: { root: chatContainer.parentElement },
+	});
+	document.body.appendChild(arButton);
+
+	return renderer;
+}
+
+function handleResize(camera, renderer) {
+	window.addEventListener('resize', () => {
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(window.innerWidth, window.innerHeight);
+	}, false);
+}
+
+function openChat(data) {
+    const container = document.getElementById("AI_container");
+    const output = document.getElementById('AI_response');
+    if (!container || !output) return;
+
+    container.classList.remove('hide');
+
+    if (data && data.introduction) {
+        window.systemPrompt = data.description;
+        const text = typeof data.introduction === 'string' ? data.introduction : String(data.introduction ?? '');
+        typewriterEffect(output, text, 25);
+    }
+}
+
+let _currentTypewriterToken = null;
+
+function typewriterEffect(element, text, speed = 25) {
+    if (!element) return null;
+
+    if (_currentTypewriterToken) _currentTypewriterToken.abort = true;
+
+    const token = { abort: false };
+    _currentTypewriterToken = token;
+
+    (async () => {
+        element.textContent = '';
+        for (let i = 0; i < text.length; i++) {
+            if (token.abort) break;
+            element.textContent += text.charAt(i);
+            await new Promise(r => setTimeout(r, speed));
+        }
+        if (_currentTypewriterToken === token) _currentTypewriterToken = null;
+    })();
+
+    return token;
+}
+
+async function sendPrompt() {
+    const inputField = document.getElementById("AI_chat_input");
+    const submitBtn = document.getElementById("AI_submit_btn");
+    const responseBox = document.getElementById("AI_response");
+    const originalBtnText = submitBtn.innerText;
+    try {
+        const prompt = inputField.value.trim();
+        if (!prompt) return;
+        
+        inputField.value = "";
+        inputField.disabled = true;
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Čekejte...";
+        submitBtn.classList.add("loading");
+
+        const response = await fetch("/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"            
+            },
+            body: JSON.stringify({
+                model: "local-model",
+                messages: [
+                    { role: "system", content: window.systemPrompt || "" },
+                    { role: "user", content: prompt }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`LLM error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content || "[žádná odpověď]";
+
+        typewriterEffect(responseBox, text, 25);
+    } catch (err) {
+        console.error("Chyba při odesílání požadavku:", err);
+        responseBox.innerText = "Nastala chyba při komunikaci s LLM.\n" +
+                            "Typ chyby: " + err.name + "\n" +
+                            "Zpráva: " + err.message;
+    } finally {
+        inputField.disabled = false;
+        submitBtn.disabled = false;
+        submitBtn.innerText = originalBtnText;
+        submitBtn.classList.remove("loading");
+    }
+}
+
+
+/* END OF IMPORT */
 
 
 // logic
