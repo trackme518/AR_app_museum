@@ -20,8 +20,10 @@ function validate_login($username, $password, $pdo){
         'user' => null
     ];
 
-    $query = $pdo->prepare("SELECT users.id, users.username, users.password_hash, roles.role_name FROM users
-                             LEFT JOIN roles ON (users.role_id = roles.id) WHERE users.username = :username");
+    $query = $pdo->prepare("SELECT users.id, users.username, users.password, users.role_id, roles.role_name 
+                             FROM users
+                             LEFT JOIN roles ON (users.role_id = roles.id) 
+                             WHERE users.username = :username");
 
     $query->execute([':username' => $username]);
     $user = $query->fetch(PDO::FETCH_ASSOC);
@@ -29,24 +31,26 @@ function validate_login($username, $password, $pdo){
     if(!$user){
         $result['error'] = "Špatné uživatelské jméno nebo heslo";
         return $result;
-    } else if (!password_verify($password, $user['password_hash'])){
+    } else if (!password_verify($password, $user['password'])){
         $result['error'] = "Špatné uživatelské jméno nebo heslo";
         return $result;
     }
 
-    if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)){ ///rehash password if needed
+    if (password_needs_rehash($user['password'], PASSWORD_DEFAULT)){ 
         $new_hash = password_hash($password, PASSWORD_DEFAULT);
-        $query = $pdo->prepare("UPDATE users SET password_hash = :password_hash WHERE id = :id");
+        $query = $pdo->prepare("UPDATE users SET password = :password WHERE id = :id");
 
         $query->execute([
-            ':password_hash' => $new_hash,
+            ':password' => $new_hash,
             ':id' => $user['id']
         ]);
     }
 
     $result['user'] = [
-        'user_id' => $user['id'],
-        'role' => $user['role_name']
+        'id' => $user['id'],
+        'username' => $user['username'],
+        'role_id' => $user['role_id'],
+        'role_name' => $user['role_name']
     ];
 
     return $result;

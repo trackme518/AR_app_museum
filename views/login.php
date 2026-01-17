@@ -73,7 +73,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </form>
         </main>
 
-        <script src="/js/navbar.js"></script>
-        <script src="/js/validateLogin.js"></script>
+        <script src="/js/validations/validateLogin.js"></script>
     </body>
 </html>

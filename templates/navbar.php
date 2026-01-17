@@ -1,43 +1,33 @@
 <header>
     <nav id="header_nav_bar">
-        <div class="hamburger" id="hamburger_btn">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
 
         <ul id="nav_menu">
             <li>
-                <a href="/" class="<?= ($path === '/' || $path === '/home') ? 'active' : '' ?>">
-                    AR simulace
+                <a href="/" class="<?= ($path === '/' || $path === '/home' || $path === '/index.php') ? 'active' : '' ?>">
+                    Domů
                 </a>
             </li>
 
-            <?php if (isset($_SESSION['role_id']) && $_SESSION['role_id'] === 1): ?>
+            <?php if (isset($_SESSION['user_id']) && isset($_SESSION['role_id']) && $_SESSION['role_id'] == 1): ?>
                 <li>
-                    <a href="/scenarios" class="<?= $path === '/scenarios' ? 'active' : '' ?>">
-                        Seznam scénářů
+                    <a href="/scenarios" class="<?= (strpos($path, '/scenarios') === 0 || strpos($path, '/scenario-form') === 0) ? 'active' : '' ?>">
+                        Scénáře
                     </a>
                 </li>
                 <li>
-                    <a href="/characters" class="<?= $path === '/characters' ? 'active' : '' ?>">
-                        Seznam postav
+                    <a href="/characters" class="<?= (strpos($path, '/characters') === 0 || strpos($path, '/character-form') === 0) ? 'active' : '' ?>">
+                        Postavy
                     </a>
                 </li>
-            <?php endif ?>
+            <?php endif; ?>
 
             <?php if (!empty($_SESSION['user_id'])): ?>
                 <li>
                     <a href="/logout" class="<?= $path === '/logout' ? 'active' : '' ?>">
-                        Odhlásit se
+                        Odhlásit se (<?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?>)
                     </a>
                 </li>
             <?php else: ?>
-                <li>
-                    <a href="/register" class="<?= $path === '/register' ? 'active' : '' ?>">
-                        Registrace
-                    </a>
-                </li>
                 <li>
                     <a href="/login" class="<?= $path === '/login' ? 'active' : '' ?>">
                         Přihlásit se

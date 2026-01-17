@@ -3,21 +3,19 @@ session_start();
 
 require_once __DIR__ . '/../backend/db.php'; 
 
-//creating token against csrf attacks
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// get path from url
 $request = $_SERVER['REQUEST_URI'];
-// remove additional parameters
 $path = parse_url($request, PHP_URL_PATH);
 
 switch ($path) {
+    // PUBLIC PAGES    
     case '/':
     case '/home':
     case '/index.php':
-        $title = "AR simulace";
+        $title = "AR Simulace";
         require __DIR__ . '/../views/home.php';
         break;
 
@@ -26,19 +24,23 @@ switch ($path) {
         require __DIR__ . '/../views/login.php';
         break;
 
-    case '/register':
-        $title = "Registrace";
-        require __DIR__ . '/../views/registration.php';
-        break;
-
     case '/logout':
         session_destroy();
         header('Location: /');
         exit;
         break;
 
-    case '/scenarios':
+
+    // ADMIN PAGES
+    
     case '/characters':
+    case '/character-form':
+    case '/delete-character':
+    case '/scenarios':
+    case '/scenario-form':
+    case '/delete-scenario':
+        
+        // A) Kontrola přihlášení
         if (empty($_SESSION['user_id'])) {
             header('Location: /login');
             exit;
@@ -49,14 +51,58 @@ switch ($path) {
             exit;
         }
 
-        if ($path === '/scenarios') {
-            $title = "Seznam scénářů";
-            require __DIR__ . '/../views/scenarios.php';
-        } else {
-            $title = "Seznam postav";
-            require __DIR__ . '/../views/characters.php';
+        switch ($path) {
+            case '/characters':
+                $title = "Seznam postav";
+                require __DIR__ . '/../views/character_list.php';
+                break;
+
+            case '/character-form':
+                $title = "Správa postavy";
+                require __DIR__ . '/../views/create_character.php';
+                break;
+
+            case '/delete-character':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    require_once __DIR__ . '/../backend/manage_characters.php';
+                    
+                    if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'] ?? '')) {
+                        die("Chyba zabezpečení.");
+                    }
+                    
+                    $id = (int)($_POST['id'] ?? 0);
+                    delete_character($id, $db);
+                }
+                header('Location: /characters');
+                exit;
+                break;
+
+
+            case '/scenarios':
+                $title = "Seznam scénářů";
+                require __DIR__ . '/../views/scenario_list.php';
+                break;
+
+            case '/scenario-form':
+                $title = "Správa scénáře";
+                require __DIR__ . '/../views/create_scenario.php';
+                break;
+            
+            case '/delete-scenario':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    require_once __DIR__ . '/../backend/manage_scenarios.php';
+                    
+                    if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'] ?? '')) {
+                        die("Chyba zabezpečení.");
+                    }
+                    
+                    $id = (int)($_POST['id'] ?? 0);
+                    delete_scenario($id, $db);
+                }
+                header('Location: /scenarios');
+                exit;
+                break;
         }
-        
         break;
 
     default:
@@ -65,5 +111,4 @@ switch ($path) {
         require __DIR__ . '/../views/404.php';
         break;
 }
-
 ?>
