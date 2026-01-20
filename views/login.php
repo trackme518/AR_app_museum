@@ -39,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <title><?php echo htmlspecialchars($title); ?></title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="/css/navbar.css" rel="stylesheet">
-        <link href="/css/global.css" rel="stylesheet">
+        <link href="/css/form.css" rel="stylesheet">
     </head>
     <body>
         

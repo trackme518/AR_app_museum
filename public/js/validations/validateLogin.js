@@ -12,6 +12,12 @@ let username = document.querySelector("#username");
 let password = document.querySelector("#password");
 let form = document.querySelector("form");
 
+/**
+ * if some error occurrs, we end this script.
+ * Data are later validated on backend, js is used only for better user experience
+ */
+if (!form || !usernameInput || !passwordInput) return;
+
 /** 
  * Validates the username input field.
  * Applies appropriate classes and validity messages based on the input.
@@ -49,7 +55,7 @@ function checkPassword(){
  * Validates the entire login form before submission.
  * Prevents submission if any field is invalid and reports validity.
  */
-function sendForm() {
+function sendForm(e) {
     if(!form.checkValidity()) {
         e.preventDefault();
         form.reportValidity();

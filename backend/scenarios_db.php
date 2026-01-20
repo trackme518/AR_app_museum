@@ -22,7 +22,7 @@ function get_scenario_by_id(PDO $db, int $id) {
     return $scenario;
 }
 
-function delete_scenario($id, $db) {
+function delete_scenario($db, $id) {
     try {
         $db->beginTransaction();
         
@@ -41,7 +41,7 @@ function delete_scenario($id, $db) {
     }
 }
 
-function save_scenario($data, $db) {
+function save_scenario($db, $data) {
     $validationErrors = validate_scenario_data($data);
     
     if (!empty($validationErrors)) {
@@ -96,5 +96,28 @@ function save_scenario($data, $db) {
         error_log("Chyba při ukládání scénáře: " . $e->getMessage());
         return "Chyba databáze: Nepodařilo se uložit scénář.";
     }
+}
+
+function get_scenario_full_details(PDO $db, int $id){
+    $query = $db->prepare("SELECT * FROM scenarios WHERE id = :id");
+    $query->execute([':id' => $id]);
+    $scenario = $query->fetch(PDO::FETCH_ASSOC);
+
+    if (!$scenario) {
+        return null;
+    }
+
+    $sql = "SELECT c.id, c.name, c.media, c.typeOfMedia, c.description, c.intro
+            FROM characters c
+            JOIN scenario_character sc ON c.id = sc.character_id
+            WHERE sc.scenario_id = :scenario_id";
+            
+    $query = $db->prepare($sql);
+    $query->execute([':scenario_id' => $id]);
+    $characters = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    $scenario['characters'] = $characters;
+
+    return $scenario;
 }
 ?>

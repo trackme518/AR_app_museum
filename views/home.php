@@ -10,6 +10,8 @@ $options = get_all_scenarios($db);
         <meta charset="UTF-8">
         <title><?php echo htmlspecialchars($title); ?></title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="/css/navbar.css" rel="stylesheet">
+        <link href="/css/ARSimulation.css" rel="stylesheet">
         
         <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
     </head>
@@ -29,7 +31,6 @@ $options = get_all_scenarios($db);
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <button id="start_simulation_btn" disabled>Spustit</button>
             </div>
             
             <div id="AR_container">
@@ -43,6 +44,6 @@ $options = get_all_scenarios($db);
             </div>
         </main>
         
-        <script type="module" src="/js/main.js"></script>
+        <script type="module" src="/js/AR_simulation/main.js"></script>
     </body>
 </html>

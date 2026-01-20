@@ -1,125 +1,132 @@
-/* ====== NAVBAR GLOBÁLNÍ STYL ====== */
+/* --- 1. PROMĚNNÉ (Musí sedět s ARSimulation.css) --- */
+:root {
+    --nav-bg: rgba(15, 23, 42, 0.95); /* Tmavší, méně průhledné než okna */
+    --nav-border: rgba(255, 255, 255, 0.1);
+    --primary-color: #0ea5e9;       /* Neonově modrá */
+    --text-color: #cbd5e1;          /* Světle šedá pro neaktivní */
+    --text-hover: #ffffff;          /* Bílá pro hover */
+}
+
+/* --- 2. HLAVNÍ KONTEJNER (HEADER) --- */
 header {
-    position: fixed;
+    position: sticky; /* Přilepený k hornímu okraji */
     top: 0;
-    left: 0;
+    z-index: 9999; /* Musí být nad obsahem stránky */
     width: 100%;
-    z-index: 10000;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(8px);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    height: 60px; /* Pevná výška */
+    
+    background: var(--nav-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--nav-border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-nav {
-    max-width: 1000px;
+/* --- 3. NAVIGAČNÍ MENU --- */
+#header_nav_bar {
+    height: 100%;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 0.8em 1.5em;
+    padding: 0 20px;
     display: flex;
-    justify-content: flex-end;
     align-items: center;
-    position: relative;
+    justify-content: center; /* Zarovnání položek na střed */
 }
 
-/* ====== HAMBURGER BUTTON ====== */
-.hamburger {
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    cursor: pointer;
-    z-index: 10001;
-}
-
-.hamburger span {
-    width: 28px;
-    height: 3px;
-    background: #333;
-    border-radius: 3px;
-    transition: all 0.3s ease;
-}
-
-/* Animace hamburger → X */
-.hamburger.active span:nth-child(1) {
-    transform: translateY(8px) rotate(45deg);
-}
-.hamburger.active span:nth-child(2) {
-    opacity: 0;
-}
-.hamburger.active span:nth-child(3) {
-    transform: translateY(-8px) rotate(-45deg);
-}
-
-/* ====== MENU LIST ====== */
-nav ul {
+#nav_menu {
     list-style: none;
-    display: flex;
-    gap: 30px;
     margin: 0;
     padding: 0;
+    display: flex;
+    gap: 30px; /* Mezery mezi odkazy */
+    height: 100%;
+    align-items: center;
 }
 
-nav li {
-    display: inline-block;
+#nav_menu li {
+    height: 100%;
+    display: flex;
+    align-items: center;
 }
 
-nav a {
+/* --- 4. ODKAZY --- */
+#nav_menu a {
     text-decoration: none;
-    color: #333;
+    color: var(--text-color);
+    font-size: 0.95rem;
     font-weight: 500;
-    font-size: 16px;
-    padding: 8px 14px;
-    border-radius: 6px;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 5px 0;
+    position: relative;
+    transition: color 0.3s ease;
 }
 
-nav a:hover {
-    background-color: #4A90E2;
-    color: white;
+/* Hover efekt (Změna barvy + jemná záře) */
+#nav_menu a:hover {
+    color: var(--text-hover);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
-nav a.active {
-    background-color: #4A90E2;
-    color: white;
-    box-shadow: 0 2px 8px rgba(74,144,226,0.3);
+/* --- 5. AKTIVNÍ STAV (.active) --- */
+/* Sci-fi styl: Neonová barva a podtržení */
+#nav_menu a.active {
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(14, 165, 233, 0.4); /* Neonová záře */
 }
 
-/* ====== RESPONSIVITA – MOBIL ====== */
+/* Animované podtržítko pro aktivní link */
+#nav_menu a.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px; /* Pod textem */
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--primary-color);
+    box-shadow: 0 0 10px var(--primary-color); /* Svítící čára */
+    border-radius: 2px;
+}
+
+/* Hover efekt pro neaktivní linky (čára se objeví) */
+#nav_menu a:not(.active)::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: var(--text-hover);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+#nav_menu a:not(.active):hover::after {
+    width: 100%;
+}
+
+/* --- 6. RESPONZIVITA (Pro mobily) --- */
+@media (max-width: 768px) {
+    #nav_menu {
+        gap: 15px; /* Menší mezery na tabletu */
+    }
+    
+    #nav_menu a {
+        font-size: 0.8rem; /* Menší písmo */
+        letter-spacing: 0.5px;
+    }
+}
+
 @media (max-width: 600px) {
-
-    /* hamburger zobrazit */
-    .hamburger {
-        display: flex;
+    /* Na velmi malých mobilech se menu zmenší nebo zalomí */
+    #nav_menu {
+        flex-wrap: wrap; 
+        justify-content: center;
+        gap: 10px 20px;
     }
-
-    /* menu schovat defaultně */
-    nav ul {
-        position: absolute;
-        top: 60px;
-        left: 0;
-        width: 100%;
-        flex-direction: column;
-        display: none;
-        gap: 0;
-        background: rgba(255, 255, 255, 0.97);
-        padding: 8px 0;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    
+    header {
+        height: auto; /* Povolit roztažení výšky */
+        padding: 10px 0;
     }
-
-    /* menu otevřené */
-    nav ul.show {
-        display: flex;
-    }
-
-    nav a {
-        display: block;
-        padding: 14px 20px;
-        text-align: center;
-        font-size: 17px;
-    }
-}
-
-/* ====== ABY OBSAH NEBYL ZA NAVBAREM ====== */
-main {
-    margin-top: 80px;
 }

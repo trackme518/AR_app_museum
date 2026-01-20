@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         die("Chyba zabezpečení.");
     }
 
-    $result = save_scenario($_POST, $db);
+    $result = save_scenario($db, $_POST);
 
     if ($result === true) {
         header("Location: /scenarios");
@@ -49,6 +49,8 @@ if (empty($selectedCharIds)) {
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($title); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/navbar.css" rel="stylesheet">
+    <link href="/css/form.css" rel="stylesheet">
 </head>
 <body>
     <?php include __DIR__ . '/../templates/navbar.php'; ?>
