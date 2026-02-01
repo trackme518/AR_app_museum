@@ -1,6 +1,10 @@
 <?php
-
 require_once __DIR__ . '/validations/validate_scenario.php';
+
+if (!defined('APP_RUNNING')) {
+    header("HTTP/1.1 403 Forbidden");
+    die("Direct access denied.");
+}
 
 function get_all_scenarios($db) {
     $query = $db->query("SELECT id, name FROM scenarios ORDER BY name ASC");
@@ -42,10 +46,12 @@ function delete_scenario($db, $id) {
 }
 
 function save_scenario($db, $data) {
-    $validationErrors = validate_scenario_data($data);
-    
-    if (!empty($validationErrors)) {
-        return $validationErrors[0];
+    if (function_exists('validate_scenario_data')) {
+        $validationErrors = validate_scenario_data($data);
+        
+        if (!empty($validationErrors)) {
+            return $validationErrors[0];
+        }
     }
 
     $id = (int)($data['id'] ?? 0);

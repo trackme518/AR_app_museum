@@ -1,4 +1,9 @@
 <?php
+if (!defined('APP_RUNNING')) {
+    header("HTTP/1.1 403 Forbidden");
+    die("Direct access denied.");
+}
+
 $config = require __DIR__ . '/../config/config.php';
 
 try {
@@ -27,11 +32,8 @@ try {
     
     error_log("Chyba připojení k DB: " . $e->getMessage());
 
-    if ($config['show_errors']) {
-        echo "<b>Chyba:</b> " . htmlspecialchars($e->getMessage());
-    } else {
-        die("Došlo k chybě připojení k databázi. Zkuste to prosím později.");
-    }
-    
-    exit;
+    http_response_code(503);
+    header('Content-Type: text/plain; charset=utf-8');
+
+    die("Došlo k chybě připojení k databázi. Zkuste to prosím později.");
 }

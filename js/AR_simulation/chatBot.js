@@ -22,7 +22,7 @@ export function typewriterEffect(element, text, speed = 25) {
 
 export async function fetchScenarioDetails(id) {
     try {
-        const res = await fetch(`/scenario-details?id=${encodeURIComponent(id)}`);
+        const res = await fetch(`/api/get_scenario_details.php?id=${encodeURIComponent(id)}`);
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         return await res.json();
     } catch (err) {

@@ -1,4 +1,8 @@
 <?php
+if (!defined('APP_RUNNING')) {
+    header("HTTP/1.1 403 Forbidden");
+    die("Direct access denied.");
+}
 
 function validate_character_data($data, $files) {
     $errors = [];

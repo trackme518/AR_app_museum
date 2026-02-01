@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/validations/validate_character.php';
 
+if (!defined('APP_RUNNING')) {
+    header("HTTP/1.1 403 Forbidden");
+    die("Direct access denied.");
+}
+
 function get_all_characters($db) {
     $query = $db->query("SELECT id, name FROM characters ORDER BY name ASC");
     return $query->fetchAll(PDO::FETCH_ASSOC);
@@ -17,8 +22,8 @@ function upload_media($file) {
     if (!isset($file) || $file['error'] === UPLOAD_ERR_NO_FILE) return null;
     if ($file['error'] !== UPLOAD_ERR_OK) return "Chyba při přenosu souboru.";
 
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime = finfo_file($finfo, $file['tmp_name']);
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($file['tmp_name']);
     
     $mediaType = '';
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -30,10 +35,12 @@ function upload_media($file) {
     $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'webm', 'mov'];
     if (!in_array($extension, $allowedExts)) return "Nepodporovaná přípona.";
 
-    $uploadDir = __DIR__ . '/../public/uploads/'; 
+    $uploadDir = __DIR__ . '/../uploads/'; 
     $webPath = '/uploads/';
 
-    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+    if (!is_dir($uploadDir)) {
+        if (!mkdir($uploadDir, 0755, true)) return "Nepodařilo se vytvořit složku pro upload.";
+    }
 
     $fileName = uniqid('media_', true) . '.' . $extension;
     $targetFile = $uploadDir . $fileName;
@@ -56,8 +63,8 @@ function delete_character($id, $db) {
         $stmt->execute([':id' => $id]);
 
         if (!empty($character['media'])) {
-            $filePath = __DIR__ . '/../public' . $character['media'];
-            if (file_exists($filePath)) {
+            $filePath = __DIR__ . '/..' . $character['media'];
+            if (file_exists($filePath) && is_file($filePath)) {
                 @unlink($filePath);
             }
         }
@@ -66,46 +73,41 @@ function delete_character($id, $db) {
 
     } catch (PDOException $e) {
         error_log("Chyba při mazání postavy: " . $e->getMessage());
-        return "Chyba databáze: Nepodařilo se smazat postavu.";
+        return "Chyba databáze: Nepodařilo se smazat postavu (možná je použita ve scénáři).";
     }
 }
 
-
 function save_character($data, $files, $db) {
-    $validationErrors = validate_character_data($data, $files);
-    if (!empty($validationErrors)) return $validationErrors[0];
+    if (function_exists('validate_character_data')) {
+        $validationErrors = validate_character_data($data, $files);
+        if (!empty($validationErrors)) return $validationErrors[0];
+    }
 
     $id = (int)($data['id'] ?? 0);
-    $name = trim($data['name']);
-    $description = trim($data['description']);
-    $intro = trim($data['intro']);
+    $name = trim($data['name'] ?? '');
+    $description = trim($data['description'] ?? '');
+    $intro = trim($data['intro'] ?? '');
     
     $uploadResult = upload_media($files['photo'] ?? null);
     if (is_string($uploadResult)) return $uploadResult;
 
-    $mediaPath = null;
-    $mediaType = null;
     $hasNewFile = is_array($uploadResult);
-
-    if ($hasNewFile) {
-        $mediaPath = $uploadResult['path'];
-        $mediaType = $uploadResult['type'];
-    }
+    $mediaPath = $hasNewFile ? $uploadResult['path'] : null;
+    $mediaType = $hasNewFile ? $uploadResult['type'] : null;
 
     $oldMediaToDelete = null;
-    if ($id > 0 && $hasNewFile) {
-        $existingChar = get_character_by_id($db, $id);
-        if ($existingChar && !empty($existingChar['media'])) {
-            $oldMediaToDelete = $existingChar['media'];
-        }
-    }
 
     try {
         $db->beginTransaction();
 
         if ($id > 0) {
-            // UPDATE
+            // --- UPDATE ---
             if ($hasNewFile) {
+                $existingChar = get_character_by_id($db, $id);
+                if ($existingChar && !empty($existingChar['media'])) {
+                    $oldMediaToDelete = $existingChar['media'];
+                }
+
                 $sql = "UPDATE characters 
                         SET name = :name, description = :description, intro = :intro, 
                             media = :media, typeOfMedia = :typeOfMedia 
@@ -127,7 +129,7 @@ function save_character($data, $files, $db) {
             $stmt->execute($params);
 
         } else {
-            // INSERT
+            // --- INSERT ---
             $sql = "INSERT INTO characters (name, description, intro, media, typeOfMedia) 
                     VALUES (:name, :description, :intro, :media, :typeOfMedia)";
             $stmt = $db->prepare($sql);
@@ -140,9 +142,9 @@ function save_character($data, $files, $db) {
         $db->commit();
 
         if ($oldMediaToDelete) {
-            $oldFileAbsPath = __DIR__ . '/../public' . $oldMediaToDelete;
-            if (file_exists($oldFileAbsPath)) {
-                unlink($oldFileAbsPath);
+            $oldFileAbsPath = __DIR__ . '/..' . $oldMediaToDelete;
+            if (file_exists($oldFileAbsPath) && is_file($oldFileAbsPath)) {
+                @unlink($oldFileAbsPath);
             }
         }
 
@@ -152,9 +154,9 @@ function save_character($data, $files, $db) {
         $db->rollBack();
 
         if ($hasNewFile && $mediaPath) {
-            $newFileAbsPath = __DIR__ . '/../public' . $mediaPath;
-            if (file_exists($newFileAbsPath)) {
-                unlink($newFileAbsPath);
+            $newFileAbsPath = __DIR__ . '/..' . $mediaPath;
+            if (file_exists($newFileAbsPath) && is_file($newFileAbsPath)) {
+                @unlink($newFileAbsPath);
             }
         }
 

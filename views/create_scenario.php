@@ -1,4 +1,9 @@
 <?php
+require_once __DIR__ . '/../backend/init.php';
+require_once __DIR__ . '/../backend/auth.php';
+
+require_admin_page();
+
 require_once __DIR__ . '/../backend/scenarios_db.php';
 require_once __DIR__ . '/../backend/character_db.php';
 
@@ -15,7 +20,7 @@ if (isset($_GET['id'])) {
     if ($loaded) {
         $scenario = $loaded;
     } else {
-        header('Location: /scenarios');
+        header('Location: /views/scenario_list.php');
         exit;
     }
 }
@@ -28,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $result = save_scenario($db, $_POST);
 
     if ($result === true) {
-        header("Location: /scenarios");
+        header("Location: /views/scenario_list.php");
         exit;
     } else {
         $error = $result;
@@ -41,15 +46,11 @@ $selectedCharIds = $scenario['character_ids'];
 if (empty($selectedCharIds)) {
     $selectedCharIds = [0];
 }
+
+$page_title = "Správa scénáře";
 ?>
 
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <title><?php echo htmlspecialchars($title); ?></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/css/navbar.css" rel="stylesheet">
+<?php include __DIR__ . '/../templates/head_content.php'; ?>
     <link href="/css/form.css" rel="stylesheet">
 </head>
 <body>
@@ -95,7 +96,7 @@ if (empty($selectedCharIds)) {
             <br>
             
             <input type="submit" value="Uložit scénář">
-            <a href="/scenarios">Zrušit</a>
+            <a href="/views/scenario_list.php">Zrušit</a>
         </form>
 
         <div id="select_template" class="template">

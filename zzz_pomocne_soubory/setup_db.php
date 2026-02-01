@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/backend/db.php';
+require __DIR__ . '/../backend/db.php';
 
 echo "Probíhá reset db<br>";
 
