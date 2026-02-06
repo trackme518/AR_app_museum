@@ -14,12 +14,25 @@ $page_title = "AR Simulace";
 
 <?php include __DIR__ . '/templates/head_content.php'; ?>
     <link href="/css/ARSimulation.css" rel="stylesheet">
+    <script src="https://launchar.app/sdk/v1?key=ltN5of0KcxXowZBgmIE0zVeLmkeeFlih&redirect=true"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
     <?php include __DIR__ . '/templates/navbar.php'; ?>
     
     <main>
         <h1>AR Simulace</h1>
+
+        <div id="ar-not-supported" style="display: none; text-align: center; margin-top: 20px;">
+            <p>Tato AR aplikace vyžaduje mobilní zařízení (iOS nebo Android).</p>
+            <p>Naskenujte tento QR kód svým telefonem pro spuštění:</p>
+            
+            <img id="qr-code" alt="QR Kód pro spuštění" style="display: block; margin: 0 auto; max-width: 250px;"/>
+            
+            <p style="font-size: 0.9em; color: gray; margin-top: 10px;">
+                Powered by Variant Launch
+            </p>
+        </div>
 
         <div id="scenario_select">
             <label for="scenario">Vyberte scénář:</label>
@@ -49,6 +62,6 @@ $page_title = "AR Simulace";
         </div>
     </main>
     
-    <script type="module" src="/js/AR_simulation/main.js"></script>
+    <script type="module" crossorigin src="/js/AR_simulation/main.js"></script>
 </body>
 </html>

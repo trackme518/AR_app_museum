@@ -42,8 +42,9 @@ export class ARSceneManager {
         document.body.appendChild(this.renderer.domElement);
 
         const arBtn = ARButton.createButton(this.renderer, {
-            requiredFeatures: ['hit-test', 'dom-overlay'],
-            domOverlay: { root: this.container.parentElement },
+            requiredFeatures: ['hit-test'],
+            optionalFeatures: ['dom-overlay'],
+            domOverlay: { root: document.body },
         });
         document.body.appendChild(arBtn);
 

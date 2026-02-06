@@ -1,6 +1,7 @@
 import { ARSceneManager } from './scene.js';
 import { typewriterEffect, fetchScenarioDetails, sendPrompt } from './chatBot.js';
 import { createVideoTexture, createImageTexture, createSprite } from './spriteUtils.js';
+import { QRCode } from './three-bundle.js'; 
 
 const scenarioSelect = document.getElementById("scenario_select");
 const chatContainer = document.getElementById("AI_container");
@@ -10,7 +11,8 @@ const submitBtn = document.getElementById("AI_submit_btn");
 const hideAiBtn = document.getElementById("hide_AI_btn");
 const exitArBtn = document.getElementById("exit_AR_btn");
 const navBar = document.getElementById("header_nav_bar");
-
+const arNotSupportedMsg = document.getElementById("ar-not-supported");
+const qrCodeImg = document.getElementById("qr-code");
 
 const state = {
     scenarioData: [],
@@ -23,6 +25,41 @@ const state = {
 };
 
 /* LOGIC */
+
+async function generateQRCode(text) {
+    if (!qrCodeImg) return;
+    
+    qrCodeImg.src = await QRCode.toDataURL(text, {
+        margin: 2,
+        color: {
+            dark: "#fe007d",
+            light: "#FFFFFF",
+        },
+    });
+}
+
+async function generateLaunchCode() {
+    if (typeof VLaunch !== 'undefined') {
+        try {
+            let url = await VLaunch.getLaunchUrl(window.location.href);
+            generateQRCode(url);
+            console.log("Variant Launch Code Generated:", url);
+        } catch (e) {
+            console.error("Chyba při získávání Launch URL:", e);
+            generateQRCode(window.location.href);
+        }
+    }
+}
+
+window.addEventListener("vlaunch-initialized", (e) => {
+    generateLaunchCode();
+});
+
+if (typeof VLaunch !== 'undefined' && VLaunch.initialized) {
+    generateLaunchCode();
+} else {
+    generateQRCode(window.location.href);
+}
 
 const onCharacterSelect = (sprite) => {
     const data = sprite.userData;
@@ -164,6 +201,30 @@ submitBtn.addEventListener('click', async () => {
     }
 });
 
-if (scenarioSelect.value) {
-    loadScenario(scenarioSelect.value);
+function startApp() {
+    if (arNotSupportedMsg) arNotSupportedMsg.style.display = "none";
+    
+    if (scenarioSelect.value) {
+        loadScenario(scenarioSelect.value);
+    }
+}
+
+function showQRCodeMode() {
+    if (arNotSupportedMsg) arNotSupportedMsg.style.display = "block";
+
+    if (scenarioSelect) scenarioSelect.style.display = 'none';
+    if (navBar) navBar.style.display = 'none';
+    if (chatContainer) chatContainer.classList.add('hide');
+}
+
+if ("xr" in navigator) {
+    navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
+        if (supported) {
+            startApp();
+        } else {
+            showQRCodeMode();
+        }
+    });
+} else {
+    showQRCodeMode();
 }

@@ -11,7 +11,7 @@ function is_admin() {
 
 function require_admin_page() {
     if (!is_admin()) {
-        header('Location: /');
+        header('Location: /index.php');
         exit;
     }
 }
