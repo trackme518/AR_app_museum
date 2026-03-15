@@ -31,20 +31,35 @@ export async function fetchScenarioDetails(id) {
     }
 }
 
-export async function sendPrompt(prompt, systemPrompt) {
-    const response = await fetch("/api/v1/chat/completions", {
+export async function sendPrompt(prompt, systemPrompt, sessionId = null) {
+    const response = await fetch("/api/chat.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            model: "local-model",
-            messages: [
-                { role: "system", content: systemPrompt || "" },
-                { role: "user", content: prompt }
-            ]
+            model: "gpt-4o-mini",
+            message: prompt,
+            systemPrompt: systemPrompt,
+            sessionId: sessionId
         })
     });
 
     if (!response.ok) throw new Error(`LLM error: ${response.status}`);
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || "[žádná odpověď]";
+    
+    if (data.error) throw new Error(data.error);
+
+    let answer = "[žádná odpověď]";
+    if (data.output && data.output.length > 0) {
+        const firstOutput = data.output[0];
+        if (firstOutput.content && firstOutput.content.length > 0) {
+            answer = firstOutput.content[0].text || "[žádná odpověď]";
+        }
+    } else if (data.choices && data.choices.length > 0) {
+        answer = data.choices[0].message?.content || "[žádná odpověď]";
+    }
+
+    return {
+        text: answer,
+        sessionId: data.id || sessionId
+    };
 }

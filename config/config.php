@@ -12,10 +12,11 @@ return [
     //'db_sqlite_path' => __DIR__ . '/../data/database.sqlite',
 
     // mysql connection
-    'db_host' => 'localhost',
-    'db_name' => 'ar_simulace_db',
-    'db_user' => 'root',
-    'db_pass' => '',
+    'db_host' => 'md394.wedos.net',
+    'db_name' => 'd379633_arapp',
+    'db_user' => 'w379633_arapp',
+    'db_pass' => '4jbhnUW5',
+    
     
     // for debugging
     'show_errors' => false

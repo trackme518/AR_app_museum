@@ -17,6 +17,7 @@ const qrCodeImg = document.getElementById("qr-code");
 const state = {
     scenarioData: [],
     characterIndex: 0,
+    activeCharacterId: null,
     spawnTimer: null,
     timeout: 5000,
     targetScale: 0.6,
@@ -145,7 +146,12 @@ async function loadScenario(id) {
     arManager.clearScene();
     
     const chars = Array.isArray(data.characters) ? data.characters : [];
-    state.scenarioData = chars.filter(c => c.media);
+    
+    state.scenarioData = chars.filter(c => c.media).map(c => ({
+        ...c,
+        sessionId: null 
+    }));
+    
     state.characterIndex = 0;
 
     if (state.scenarioData.length > 0) {
@@ -156,6 +162,8 @@ async function loadScenario(id) {
 function openChat(data) {
     chatContainer.classList.remove('hide');
     state.systemPrompt = data.description || "";
+
+    state.activeCharacterId = data.id;
     
     const text = data.introduction || "Ahoj!";
     typewriterEffect(chatOutput, text, 25);
@@ -190,8 +198,16 @@ submitBtn.addEventListener('click', async () => {
     submitBtn.innerText = "...";
 
     try {
-        const response = await sendPrompt(prompt, state.systemPrompt);
-        typewriterEffect(chatOutput, response, 25);
+        const activeChar = state.scenarioData.find(c => c.id === state.activeCharacterId);
+        const currentSessionId = activeChar ? activeChar.sessionId : null;
+        const result = await sendPrompt(prompt, state.systemPrompt, currentSessionId);
+        
+        if (activeChar && result.sessionId) {
+            activeChar.sessionId = result.sessionId;
+        }
+
+        typewriterEffect(chatOutput, result.text, 25);
+        
     } catch (err) {
         chatOutput.innerText = "Chyba: " + err.message;
     } finally {
