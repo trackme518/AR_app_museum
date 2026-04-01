@@ -62,6 +62,6 @@ $page_title = "AR Simulace";
         </div>
     </main>
     
-    <script type="module" crossorigin src="/js/AR_simulation/main.js"></script>
+    <script type="module" crossorigin src="/js/AR_simulation/main.js?v=2"></script>
 </body>
 </html>

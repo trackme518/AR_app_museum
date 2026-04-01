@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 $allowedOrigins = [
     'https://ar.museumofpragueai.com'
 ];
@@ -16,6 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+header("Content-Type: application/json; charset=utf-8");
+
 $iniPath = __DIR__ . '/../../arapp_config.ini';
 
 if (!file_exists($iniPath)) {
@@ -25,12 +30,15 @@ if (!file_exists($iniPath)) {
     exit;
 }
 
-$config = parse_ini_file($iniPath);
+$config = @parse_ini_file($iniPath);
 
 if (!$config || !isset($config['openai_key'])) {
+    $phpError = error_get_last();
     http_response_code(500);
-    header("Content-Type: application/json");
-    echo json_encode(['error' => 'Chybi openai_key v konfiguracnim souboru.']);
+    echo json_encode([
+        'error' => 'Chyba pri cteni INI souboru. Zkontroluj, zda v nem nejsou chybne znaky.',
+        'php_detail' => $phpError['message'] ?? 'Neznama chyba'
+    ]);
     exit;
 }
 
@@ -40,8 +48,7 @@ $inputData = json_decode(file_get_contents("php://input"), true);
 
 if (!isset($inputData['message'])) {
     http_response_code(400);
-    header("Content-Type: application/json");
-    echo json_encode(['error' => 'Chybi povinny parametr: messages']);
+    echo json_encode(['error' => 'Chybi povinny parametr: message']);
     exit;
 }
 
@@ -56,6 +63,10 @@ $postData = [
         ]
     ]
 ];
+
+if (!empty($inputData['systemPrompt'])) {
+    $postData['instructions'] = $inputData['systemPrompt'];
+}
 
 if (!empty($inputData['sessionId'])) {
     $postData['previous_response_id'] = $inputData['sessionId'];

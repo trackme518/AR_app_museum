@@ -43,11 +43,12 @@ export async function sendPrompt(prompt, systemPrompt, sessionId = null) {
         })
     });
 
-    if (!response.ok) throw new Error(`LLM error: ${response.status}`);
     const data = await response.json();
-    
-    if (data.error) throw new Error(data.error);
 
+    if (!response.ok || data.error) {
+        throw new Error(data.error || `HTTP chyba: ${response.status}`);
+    }
+    
     let answer = "[žádná odpověď]";
     if (data.output && data.output.length > 0) {
         const firstOutput = data.output[0];
