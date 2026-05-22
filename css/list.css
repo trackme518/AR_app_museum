@@ -1,0 +1,171 @@
+:root {
+    --bg-color: #0f172a;
+    --text-color: #f8fafc;
+    --primary-color: #0ea5e9;
+    --danger-color: #ef4444;
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --item-hover-bg: rgba(30, 41, 59, 0.8);
+    --transition: 0.3s ease;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding-bottom: 50px;
+}
+
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+h1 {
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px rgba(14, 165, 233, 0.3);
+}
+
+.error-msg {
+    color: var(--danger-color);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger-color);
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 500;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+.hidden {
+    display: none !important;
+}
+
+a.button {
+    display: block;
+    width: fit-content;
+    margin: 0 auto 40px;
+    background: var(--primary-color);
+    color: #fff;
+    text-decoration: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all var(--transition);
+}
+a.button:hover {
+    background: #0284c7;
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+}
+
+#element-list,
+#scenario_list,
+#user-list,
+#program_list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+#element-list p,
+#scenario_list p,
+#user-list p,
+#program_list p {
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+    padding: 20px;
+}
+
+.char-item,
+.list-item,
+.program-item {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--glass-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px 20px;
+    backdrop-filter: blur(5px);
+    transition: all var(--transition);
+}
+.char-item:hover,
+.list-item:hover,
+.program-item:hover {
+    background: var(--item-hover-bg);
+    border-color: var(--primary-color);
+    transform: translateX(5px);
+    box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.character_entry,
+.list-item > a,
+.user_entry,
+.program-item > a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    flex-grow: 1;
+    transition: color 0.2s;
+}
+.char-item:hover .character_entry,
+.list-item:hover > a,
+.list-item:hover .user_entry,
+.program-item:hover > a {
+    color: var(--primary-color);
+    text-shadow: 0 0 8px rgba(14, 165, 233, 0.3);
+}
+
+.user-role-text {
+    color: #94a3b8;
+    font-size: 0.9em;
+    font-weight: normal;
+    margin-left: 8px;
+    transition: color var(--transition);
+}
+.list-item:hover .user-role-text {
+    color: #cbd5e1;
+}
+
+.character_entry::after,
+.list-item > a::after,
+.user_entry::after,
+.program-item > a::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+.delete-btn {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    width: 36px;
+    height: 36px;
+    margin-left: 15px;
+    font: bold 1.1rem inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
