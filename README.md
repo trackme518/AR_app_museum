@@ -2,6 +2,17 @@
 
 PHP/MariaDB application for marker- and surface-placed historical AR characters.
 
+The original code associated with Ondřej Sýkora's bachelor thesis is preserved
+in the [`original_bachelor_thesis`](https://github.com/trackme518/AR_app_museum/tree/original_bachelor_thesis)
+branch. This branch contains the subsequent development work.
+
+## License
+
+This project's own code is licensed under the MIT License (see [`LICENSE`](LICENSE)).
+Third-party code — including Three.js, node-qrcode, i18next, and the optional
+Launchar runtime — remains under its respective licenses and is excluded from
+the MIT grant. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
 ## AR runtime
 
 The application uses standard **WebXR only** (`navigator.xr`): immersive AR sessions, image tracking when the runtime exposes it (it stays an optional feature, so AR still starts without it), and hit testing for markerless placement. Three.js and its AR button are bundled in `js/AR_simulation/three-bundle.js`; nothing is downloaded at runtime.
