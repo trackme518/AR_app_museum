@@ -1,4 +1,5 @@
 import { ApiService } from '../ApiService.js';
+import { t } from '../localization.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const listContainer = document.getElementById('element-list');
@@ -40,7 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.innerHTML = '';
 
             if (characters.length === 0) {
-                listContainer.textContent = 'Zatím žádné postavy.';
+                listContainer.dataset.i18n = 'list.noCharacters';
+                listContainer.textContent = t('list.noCharacters');
                 return;
             }
 
@@ -57,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.dataset.id = char.id;
-                deleteBtn.title = 'Smazat postavu';
+                deleteBtn.dataset.i18nTitle = 'action.deleteCharacter';
+                deleteBtn.title = t('action.deleteCharacter');
                 deleteBtn.textContent = 'X';
 
                 div.append(link, deleteBtn);
@@ -66,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('API Error:', error);
             listContainer.innerHTML = '';
-            showError(error.message || 'Nepodařilo se načíst postavy.');
+            showError(error.message || t('error.charactersLoad'));
         }
     }
 
@@ -80,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('delete-btn')) {
             const id = e.target.dataset.id; // Using dataset for data-id
 
-            if (!confirm('Opravdu chcete tuto postavu smazat?')) return;
+            if (!confirm(t('confirm.deleteCharacter'))) return;
 
             clearError();
 
@@ -92,11 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Check if list is empty after deletion and display fallback message
                 if (listContainer.children.length === 0) {
-                    listContainer.textContent = 'Zatím žádné postavy.';
+                    listContainer.dataset.i18n = 'list.noCharacters';
+                    listContainer.textContent = t('list.noCharacters');
                 }
             } catch (error) {
                 console.error('Delete Error:', error);
-                showError(error.message || 'Chyba při mazání postavy.');
+                showError(error.message || t('error.characterDelete'));
             }
         }
     }

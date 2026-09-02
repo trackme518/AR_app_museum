@@ -1,0 +1,7 @@
+{
+  "name": "ar-museum-browser-dependencies",
+  "private": true,
+  "dependencies": {
+    "i18next": "26.4.1"
+  }
+}

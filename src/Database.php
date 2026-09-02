@@ -62,17 +62,26 @@ class Database
                 PDO::ATTR_EMULATE_PREPARES => false,
             ];
 
-            // using sqlite for localhost development, MySql on production
-            if ($dbConfig['type'] === 'sqlite') {
-                $dsn = 'sqlite:' . $dbConfig['sqlite_path'];
-                self::$pdo = new PDO($dsn, null, null, $options);
-            } elseif ($dbConfig['type'] === 'mysql') {
-                $mysql = $dbConfig['mysql'];
-                $dsn = "mysql:host={$mysql['host']};dbname={$mysql['name']};charset={$mysql['charset']}";
-                self::$pdo = new PDO($dsn, $mysql['user'], $mysql['pass'], $options);
-            } else {
-                throw new InvalidArgumentException("Nepodporovaný typ databáze: " . ($dbConfig['type'] ?? 'neznámý'));
+            if (($dbConfig['type'] ?? '') !== 'mariadb') {
+                throw new InvalidArgumentException('Aplikace podporuje pouze databázi MariaDB.');
             }
+
+            foreach (['host', 'name', 'user'] as $requiredKey) {
+                if (empty($dbConfig[$requiredKey])) {
+                    throw new InvalidArgumentException("Chybí konfigurace MariaDB: {$requiredKey}.");
+                }
+            }
+
+            // MariaDB uses PHP's PDO MySQL driver and mysql: DSN.
+            $dsn = sprintf(
+                'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+                $dbConfig['host'],
+                $dbConfig['port'],
+                $dbConfig['name'],
+                $dbConfig['charset']
+            );
+            self::$pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], $options);
+            self::seedInitialAdmin(self::$pdo, $dbConfig);
 
             return self::$pdo;
         } catch (PDOException $e) {
@@ -80,5 +89,26 @@ class Database
 
             throw new RuntimeException("Připojení k databázi selhalo, zkuste to prosím později.", 503, $e);
         }
+    }
+
+    private static function seedInitialAdmin(PDO $pdo, array $dbConfig): void
+    {
+        if ((int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn() !== 0) {
+            return;
+        }
+
+        $username = trim((string)($dbConfig['admin_username'] ?? 'admin'));
+        $password = (string)($dbConfig['admin_password'] ?? '');
+        if ($username === '' || $password === '') {
+            throw new RuntimeException('ADMIN_USERNAME and ADMIN_PASSWORD must be set when initializing an empty database.');
+        }
+
+        $statement = $pdo->prepare(
+            'INSERT INTO users (username, password, role_id) VALUES (:username, :password, 1)'
+        );
+        $statement->execute([
+            ':username' => $username,
+            ':password' => password_hash($password, PASSWORD_DEFAULT),
+        ]);
     }
 }

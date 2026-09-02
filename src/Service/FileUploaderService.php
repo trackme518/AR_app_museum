@@ -55,6 +55,22 @@ class FileUploaderService
         return $this->processUpload($file, 'markers', 'marker_', $allowedExts, false, false);
     }
 
+    public function uploadVideo(?array $file, string $prefix = 'video_'): ?array
+    {
+        $allowedExts = ['mp4', 'webm', 'mov', 'ogv', 'ogg'];
+        $result = $this->processUpload($file, 'media', $prefix, $allowedExts, true, false);
+        if ($result === null) {
+            return null;
+        }
+        if (!str_starts_with($result['mime'], 'video/')) {
+            @unlink(__DIR__ . '/../..' . $result['path']);
+            throw new ValidationException('The selected animation state must be a video file.');
+        }
+        unset($result['mime']);
+        $result['type'] = 'video';
+        return $result;
+    }
+
 
     /**
      * Handles the core logic for file upload, validation, and storage.

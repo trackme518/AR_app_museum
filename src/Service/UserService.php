@@ -47,7 +47,7 @@ class UserService
         $user = $this->repository->findById($id);
 
         if (!$user) {
-            throw new ValidationException("Uživatel nenalezen.", 404);
+            throw new ValidationException("User not found.", 404);
         }
 
         return new UserResultDTO($user->id, $user->username, $user->roleId, $user->roleName);
@@ -63,7 +63,7 @@ class UserService
     public function deleteUser(int $idToDelete, int $currentUserId): void
     {
         if ($idToDelete === $currentUserId) {
-            throw new ValidationException("Nemůžete smazat svůj vlastní účet.", 400);
+            throw new ValidationException("You cannot delete your own account.", 400);
         }
 
         $this->repository->delete($idToDelete);
@@ -78,13 +78,13 @@ class UserService
     public function saveUser(SaveUserDTO $dto): void
     {
         if (empty($dto->username) || empty($dto->roleId)) {
-            throw new ValidationException("Jméno a role jsou povinné.", 400);
+            throw new ValidationException("Username and role are required.", 400);
         }
 
         try {
             if ($dto->id === 0) {
                 if (empty($dto->password)) {
-                    throw new ValidationException("Heslo je povinné pro nového uživatele.", 400);
+                    throw new ValidationException("A password is required for a new user.", 400);
                 }
                 $hash = password_hash($dto->password, PASSWORD_DEFAULT);
                 $newUser = new User(null, $dto->username, $hash, $dto->roleId);
@@ -92,7 +92,7 @@ class UserService
             } else {
                 $existingUser = $this->repository->findById($dto->id);
                 if (!$existingUser) {
-                    throw new ValidationException("Uživatel neexistuje.", 404);
+                    throw new ValidationException("User not found.", 404);
                 }
 
                 $hash = !empty($dto->password) ? password_hash($dto->password, PASSWORD_DEFAULT) : $existingUser->passwordHash;
@@ -103,7 +103,7 @@ class UserService
         } catch (PDOException $e) {
             // catch database error when duplicit username occurs and throws custom exception
             if (strpos($e->getMessage(), 'UNIQUE') !== false || strpos($e->getMessage(), 'Duplicate') !== false) {
-                throw new ValidationException("Uživatel s tímto jménem již existuje.", 400);
+                throw new ValidationException("A user with this username already exists.", 400);
             }
             throw $e;
         }

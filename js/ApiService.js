@@ -199,6 +199,36 @@ export class ApiService {
         return await response.json();
     }
 
+    async getKnowledgeDocuments() {
+        return this.fetchJson('/knowledge-documents', { credentials: 'same-origin' });
+    }
+
+    async uploadKnowledgeDocument(file, exhibitionId, csrfToken) {
+        const formData = new FormData();
+        formData.append('document', file);
+        formData.append('exhibition_id', exhibitionId || '');
+
+        const response = await fetch(`${this.baseUrl}/knowledge-documents`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRF-Token': csrfToken },
+            body: formData
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    }
+
+    async deleteKnowledgeDocument(id, csrfToken) {
+        return this.fetchJson(`/knowledge-documents/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: { 'X-CSRF-Token': csrfToken }
+        });
+    }
+
     /**
      * Fetches all registered scenarios.
      * @returns {Promise<Array>} Array of scenario objects.
@@ -277,14 +307,16 @@ export class ApiService {
         });
     }
 
-    async sendChatPrompt(prompt, systemPrompt, sessionId = null) {
+    async sendChatPrompt(prompt, systemPrompt, sessionId = null, locale = '', exhibitionId = null) {
         const response = await fetch(`${this.baseUrl}/ai/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: prompt,
                 systemPrompt: systemPrompt,
-                sessionId: sessionId
+                sessionId: sessionId,
+                locale: locale,
+                exhibitionId: exhibitionId
             })
         });
 
@@ -300,48 +332,4 @@ export class ApiService {
         };
     }
 
-    async sendSpeechPrompt(audioBlob, systemPrompt = null, sessionId = null) {
-        let ext = 'webm';
-        if (audioBlob.type.includes('mp4') || audioBlob.type.includes('m4a')) {
-            ext = 'mp4';
-        }
-
-        const formData = new FormData();
-        formData.append('audio', audioBlob, `audio.${ext}`); 
-        
-        if (systemPrompt) formData.append('systemPrompt', systemPrompt);
-        if (sessionId) formData.append('sessionId', sessionId);
-
-        const response = await fetch(`${this.baseUrl}/ai/voice`, {
-            method: "POST",
-            body: formData
-        });
-
-        if (!response.ok) {
-            let errorMsg = `HTTP error: ${response.status}`;
-            try {
-                const errorData = await response.json();
-                errorMsg = errorData.error ? (typeof errorData.error === 'object' ? JSON.stringify(errorData.error) : errorData.error) : JSON.stringify(errorData);
-            } catch (e) {
-                const errorText = await response.text();
-                if (errorText) errorMsg = errorText;
-            }
-            throw new Error(errorMsg);
-        }
-
-        const rawUserText = response.headers.get('X-User-Text');
-        const rawBotText = response.headers.get('X-Bot-Text');
-        
-        const userText = rawUserText ? decodeURIComponent(rawUserText) : '[Unrecognized]';
-        const botText = rawBotText ? decodeURIComponent(rawBotText) : '[No response]';
-
-        const resultAudioBlob = await response.blob();
-
-        return {
-            audioBlob: resultAudioBlob,
-            userText: userText,
-            botText: botText,
-            sessionId: sessionId 
-        };
-    }
 }

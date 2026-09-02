@@ -169,3 +169,43 @@ a.button:hover {
     color: var(--danger-color);
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
 }
+
+.knowledge-page {
+    max-width: 900px;
+}
+
+.knowledge-help {
+    color: #94a3b8;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.knowledge-page form {
+    margin-bottom: 35px;
+}
+
+.knowledge-page h2 {
+    margin-top: 35px;
+    font-weight: 400;
+}
+
+#knowledge-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.knowledge-item > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.knowledge-item strong {
+    overflow-wrap: anywhere;
+}
+
+.knowledge-item small {
+    color: #94a3b8;
+}

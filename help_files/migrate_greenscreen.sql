@@ -1,0 +1,1 @@
+ALTER TABLE characters ADD COLUMN greenscreen TINYINT(1) NOT NULL DEFAULT 0;

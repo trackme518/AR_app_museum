@@ -1,4 +1,5 @@
 import { ApiService } from '../../ApiService.js';
+import { t } from '../../localization.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('character_form');
@@ -19,15 +20,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const markerActionSelect = document.getElementById('marker_action');
     const markerContainer = document.getElementById('marker_input_container');
     const markerInput = document.getElementById('marker');
+    const markerClearButton = document.getElementById('marker_clear_button');
     const markerPreviewContainer = document.getElementById('marker_preview_container');
 
     const typeRadios = document.querySelectorAll('input[name="character_type"]');
     const mediaLegend = document.getElementById('media_fieldset_legend');
     const fileInputLabel = document.getElementById('file_input_label');
+    const mediaLegendText = mediaLegend.querySelector('[data-i18n]');
+    const fileInputLabelText = fileInputLabel.querySelector('[data-i18n]');
     const animationsFieldset = document.getElementById('animations_fieldset');
+    const videoStatesFieldset = document.getElementById('video_states_fieldset');
+    const talkPreview = document.getElementById('video_talk_preview');
+    const specialPreview = document.getElementById('video_special_preview');
 
     const apiService = new ApiService();
-    let originalCharacterType = '2D';
+    let originalCharacterType = 'IMAGE';
 
 
     function showError(message) {
@@ -40,17 +47,31 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {string} type - '2D' or '3D'
      */
     function updateMediaTypeUI(type) {
+        let mediaKey;
+        let fileLabelKey;
         if (type === '3D') {
-            mediaLegend.textContent = '3D Model (GLB) *';
-            fileInputLabel.textContent = 'Vyberte soubor modelu (.glb, .gltf):';
+            mediaKey = 'character.modelFile';
+            fileLabelKey = 'character.selectModel';
             fileInput.accept = '.glb,.gltf';
             if (animationsFieldset) animationsFieldset.classList.remove('hidden'); 
+            videoStatesFieldset.classList.add('hidden');
+        } else if (type === 'VIDEO') {
+            mediaKey = 'character.idleVideo';
+            fileLabelKey = 'character.selectIdleVideo';
+            fileInput.accept = 'video/mp4,video/webm,video/ogg,video/quicktime';
+            animationsFieldset.classList.add('hidden');
+            videoStatesFieldset.classList.remove('hidden');
         } else {
-            mediaLegend.textContent = 'Obrázek / Video *';
-            fileInputLabel.textContent = 'Vyberte soubor (Obrázek/Video):';
-            fileInput.accept = 'image/*, video/*';
+            mediaKey = 'character.image';
+            fileLabelKey = 'character.selectImage';
+            fileInput.accept = 'image/*';
             if (animationsFieldset) animationsFieldset.classList.add('hidden');  
+            videoStatesFieldset.classList.add('hidden');
         }
+        mediaLegendText.dataset.i18n = mediaKey;
+        mediaLegendText.textContent = t(mediaKey);
+        fileInputLabelText.dataset.i18n = fileLabelKey;
+        fileInputLabelText.textContent = t(fileLabelKey);
 
         // Force 'update' action if the user changes the media type of an existing character
         if (charId > 0 && actionSelect) {
@@ -87,10 +108,12 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {Object} character - The character data from API.
      */
     function renderMediaPreview(character) {
+        delete previewContainer.dataset.i18n;
         previewContainer.innerHTML = ''; // Clear old content
         
         const label = document.createElement('p');
-        label.textContent = 'Aktuální soubor:';
+        label.dataset.i18n = 'character.currentFile';
+        label.textContent = t('character.currentFile');
         previewContainer.appendChild(label);
 
         if (character.typeOfMedia === 'video') {
@@ -107,13 +130,15 @@ document.addEventListener('DOMContentLoaded', () => {
             div.style.borderRadius = '8px';
             
             const p = document.createElement('p');
-            p.textContent = 'Nahrán 3D Model';
+            p.dataset.i18n = 'character.modelUploaded';
+            p.textContent = t('character.modelUploaded');
             
             const a = document.createElement('a');
             a.href = character.media;
             a.target = '_blank';
             a.style.color = '#0ea5e9';
-            a.textContent = '💾 Stáhnout/Zobrazit GLB soubor';
+            a.dataset.i18n = 'character.viewModel';
+            a.textContent = t('character.viewModel');
             
             div.append(p, a);
             previewContainer.appendChild(div);
@@ -121,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const img = document.createElement('img');
             img.src = character.media;
-            img.alt = 'Náhled postavy';
+            img.alt = t('character.previewAlt');
             img.width = 200;
             previewContainer.appendChild(img);
         }
@@ -132,14 +157,16 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {Object} character - The character data from API.
      */
     function renderMarkerPreview(character) {
+        delete markerPreviewContainer.dataset.i18n;
         markerPreviewContainer.innerHTML = '';
         
         const label = document.createElement('p');
-        label.textContent = 'Aktuální marker:';
+        label.dataset.i18n = 'character.currentMarker';
+        label.textContent = t('character.currentMarker');
         
         const img = document.createElement('img');
         img.src = character.marker;
-        img.alt = 'Náhled markeru';
+        img.alt = t('character.markerPreviewAlt');
         img.width = 200;
         
         markerPreviewContainer.append(label, img);
@@ -156,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // FRONTEND AUTHORIZATION CHECK
             if (!hasGlobalEdit && character.createdBy !== currentUserId) {
-                alert('Nemáte oprávnění upravovat tuto postavu.');
+                alert(t('permission.character'));
                 window.location.href = '/views/character_list.php';
                 return;
             }
@@ -173,7 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (talkInput) talkInput.value = character.anim_talk || character.animTalk || '';
             if (specialInput) specialInput.value = character.anim_special || character.animSpecial || '';
 
-            originalCharacterType = character.character_type || (character.typeOfMedia === 'model' ? '3D' : '2D');
+            originalCharacterType = character.typeOfMedia === 'model'
+                ? '3D'
+                : (character.typeOfMedia === 'video' ? 'VIDEO' : 'IMAGE');
             
             const radioToSelect = document.querySelector(`input[name="character_type"][value="${originalCharacterType}"]`);
             if (radioToSelect) radioToSelect.checked = true;
@@ -182,18 +211,46 @@ document.addEventListener('DOMContentLoaded', () => {
             if (character.media) {
                 renderMediaPreview(character);
             } else {
-                previewContainer.textContent = 'Zatím nebyl nahrán žádný soubor.';
+                previewContainer.dataset.i18n = 'character.noFile';
+                previewContainer.textContent = t('character.noFile');
             }
+
+            const renderStatePreview = (container, path, stateKey) => {
+                container.replaceChildren();
+                if (!path) return;
+                const title = document.createElement('p');
+                title.dataset.i18n = 'character.currentVideo';
+                title.dataset.i18nOptions = JSON.stringify({ state: t(stateKey) });
+                title.textContent = t('character.currentVideo', { state: t(stateKey) });
+                const video = document.createElement('video');
+                video.src = path;
+                video.controls = true;
+                video.width = 200;
+                container.append(title, video);
+            };
+            renderStatePreview(talkPreview, character.videoTalk, 'character.stateTalk');
+            renderStatePreview(specialPreview, character.videoSpecial, 'character.stateSpecial');
 
             if (character.marker) {
                 renderMarkerPreview(character);
             } else {
-                markerPreviewContainer.textContent = 'Zatím nebyl nahrán žádný marker.';
+                markerPreviewContainer.dataset.i18n = 'character.noMarker';
+                markerPreviewContainer.textContent = t('character.noMarker');
+            }
+
+            const orientationSelect = document.getElementById('marker_orientation');
+            if (orientationSelect && character.markerOrientation) {
+                orientationSelect.value = character.markerOrientation;
+            }
+
+            const greenscreenCheckbox = document.getElementById('greenscreen');
+            if (greenscreenCheckbox && typeof character.greenscreen !== 'undefined') {
+                greenscreenCheckbox.checked = character.greenscreen === true || character.greenscreen === 1;
             }
 
         } catch (error) {
             console.error("Fetch error:", error);
-            showError('Chyba při načítání postavy ze serveru.');
+            showError(t('character.loadFailed'));
         }
     }
 
@@ -210,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Remove files from payload if 'keep' is selected
         if (charId > 0) {
             if (actionSelect && actionSelect.value === 'keep') formData.delete('photo');
-            if (markerActionSelect && markerActionSelect.value === 'keep') formData.delete('marker');
+            if (markerActionSelect && markerActionSelect.value !== 'update') formData.delete('marker');
         }
 
         try {
@@ -218,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = '/views/character_list.php';
         } catch (error) {
             console.error('Submit error:', error);
-            showError(error.message || 'Kritická chyba: Nepodařilo se připojit k API.');
+            showError(error.message || t('common.apiUnavailable'));
         }
     }
 
@@ -237,6 +294,15 @@ document.addEventListener('DOMContentLoaded', () => {
             handleActionToggle(this.value, markerContainer, markerInput);
         });
     }
+
+    markerClearButton?.addEventListener('click', () => {
+        markerInput.value = '';
+        markerInput.required = false;
+        if (markerActionSelect) markerActionSelect.value = 'remove';
+        markerContainer.classList.remove('hidden');
+        markerPreviewContainer.dataset.i18n = 'character.surfacePlacement';
+        markerPreviewContainer.textContent = t('character.surfacePlacement');
+    });
 
     form.addEventListener('submit', handleFormSubmit);
 

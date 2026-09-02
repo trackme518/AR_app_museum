@@ -6,7 +6,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use App\Service\AiService;
 use App\Domain\Ai\ChatRequestDTO;
-use App\Domain\Ai\VoiceRequestDTO;
 use App\Exception\ValidationException;
 use RuntimeException;
 
@@ -34,13 +33,17 @@ class AiController extends AbstractController
         $data = $request->getParsedBody() ?? [];
 
         if (empty($data['message'])) {
-            return $this->jsonResponse($response, ['error' => 'Chybí povinný parametr: message'], 400);
+            return $this->jsonResponse($response, ['error' => 'Missing required parameter: message'], 400);
         }
 
         $dto = new ChatRequestDTO(
             message: $data['message'],
             systemPrompt: $data['systemPrompt'] ?? '',
             sessionId: $data['sessionId'] ?? '',
+            locale: $data['locale'] ?? '',
+            exhibitionId: isset($data['exhibitionId']) && $data['exhibitionId'] !== ''
+                ? (int)$data['exhibitionId']
+                : null,
         );
 
         try {
@@ -63,49 +66,4 @@ class AiController extends AbstractController
         }
     }
 
-    /**
-     * Processes a voice chat request with an uploaded audio file.
-     *
-     * @param Request $request PSR-7 server request
-     * @param Response $response PSR-7 response
-     * @return Response Audio response with AI reply or error
-     */
-    public function voice(Request $request, Response $response): Response
-    {
-        $uploadedFiles = $request->getUploadedFiles();
-        if (empty($uploadedFiles['audio']) || $uploadedFiles['audio']->getError() !== UPLOAD_ERR_OK) {
-            return $this->jsonResponse($response, ['error' => 'Chybí audio soubor v požadavku'], 400);
-        }
-
-        $audioFile = $uploadedFiles['audio'];
-        $data = $request->getParsedBody() ?? [];
-
-        $systemPrompt = $data['systemPrompt'] ?? '';
-        $voice = $data['voice'] ?? 'alloy';
-
-        try {
-            $result = $this->service->voiceChatPipeline(
-                $audioFile->getFilePath(),
-                $audioFile->getClientMediaType(),
-                $audioFile->getClientFilename() ?? 'audio.webm',
-                $systemPrompt,
-                $data['sessionId'] ?? '',
-                $voice
-            );
-
-            $userText = $result['userText'];
-            $botText = $result['botText'];
-
-            $response->getBody()->write($result['audioBlob']);
-
-            return $response
-                ->withHeader('Content-Type', 'audio/mpeg')
-                ->withHeader('X-User-Text', rawurlencode($userText))
-                ->withHeader('X-Bot-Text', rawurlencode($botText))
-                ->withHeader('Access-Control-Expose-Headers', 'X-User-Text, X-Bot-Text');
-        } catch (RuntimeException | ValidationException $e) {
-            error_log("AI Voice Error: " . $e->getMessage());
-            return $this->jsonResponse($response, ['error' => $e->getMessage()], $e->getCode() ?: 500);
-        }
-    }
 }

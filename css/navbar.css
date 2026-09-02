@@ -1,8 +1,8 @@
 :root {
-    --nav-bg: rgba(15, 23, 42, 0.95);
-    --primary-color: #0ea5e9;
-    --text-color: #cbd5e1;
-    --text-hover: #ffffff;
+    --nav-bg: rgba(7, 17, 31, 0.92);
+    --primary-color: #38bdf8;
+    --text-color: #aebed0;
+    --text-hover: #f8fafc;
     --transition: 0.3s ease;
 }
 
@@ -16,9 +16,54 @@ header {
     backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+}
+
+/* Hamburger toggle (hidden on wide screens unless the menu overflows). */
+#nav-toggle {
+    display: none;
+    order: 2;
+    margin-right: 20px;
+    padding: 8px 6px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    z-index: 10001;
+}
+
+#nav-toggle .bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--text-hover);
+    transition: transform var(--transition), opacity var(--transition);
+}
+
+#nav-toggle:hover {
+    border-color: var(--primary-color);
+}
+
+/* Burger to X */
+#nav-toggle[aria-expanded="true"] .bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+#nav-toggle[aria-expanded="true"] .bar:nth-child(2) {
+    opacity: 0;
+}
+
+#nav-toggle[aria-expanded="true"] .bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
 }
 
 #header-nav-bar {
+    flex: 1;
     height: 100%;
     max-width: 1200px;
     margin: 0 auto;
@@ -91,4 +136,196 @@ header {
 
 #nav-menu a:not(.active):hover::after {
     width: 100%;
+}
+
+/* --- Language picker as plain text --- */
+.nav-lang {
+    list-style: none;
+}
+
+.lang-picker {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    white-space: nowrap;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.lang-picker .lang-picker-label {
+    color: var(--text-hover);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+.lang-picker .lang-picker-value {
+    color: var(--primary-color);
+}
+
+.lang-picker::after {
+    content: '▾';
+    margin-left: 2px;
+    font-size: 0.7rem;
+    color: var(--text-color);
+}
+
+/* Transparent select layered over the text: clicking anywhere on
+   "Language: Čeština" opens the native dropdown. */
+.lang-picker select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.lang-picker select option {
+    color: initial;
+    background: #0f1d2e;
+    color: var(--text-strong);
+}
+
+/* The overlay sits above the text but stays fully transparent. */
+.lang-picker select {
+    z-index: 2;
+} 
+
+/* --- Collapsible / hamburger mode ---
+   Applied by JS when the menu overflows its container, and always on small
+   screens via the media query below. Shows the hamburger and turns the nav
+   into a vertical dropdown. */
+.collapsible #nav-toggle {
+    display: flex;
+}
+
+.collapsible #header-nav-bar {
+    justify-content: flex-start;
+}
+
+.collapsible #nav-menu {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    height: auto;
+    max-height: 0;
+    overflow: hidden;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: rgba(7, 17, 31, 0.97);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+    padding: 0;
+    transition: max-height 0.3s ease;
+}
+
+.collapsible #nav-menu.nav-open {
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+}
+
+.collapsible #nav-menu li {
+    height: auto;
+    padding: 0;
+}
+
+.collapsible #nav-menu a {
+    display: block;
+    padding: 14px 20px;
+    text-align: left;
+}
+
+.collapsible #nav-menu li:first-child a {
+    padding-top: 16px;
+}
+
+.collapsible #nav-menu a.active::after,
+.collapsible #nav-menu a:not(.active)::after {
+    display: none;
+}
+
+.collapsible #nav-menu .nav-lang {
+    height: auto;
+    padding: 14px 20px 16px;
+}
+
+.collapsible .lang-picker {
+    width: 100%;
+    justify-content: flex-start;
+    font-size: 1rem;
+}
+
+/* Mobile default: collapse whenever the viewport is narrow. */
+@media (max-width: 880px) {
+    #nav-toggle {
+        display: flex;
+    }
+
+    #header-nav-bar {
+        justify-content: flex-start;
+    }
+
+    #nav-menu {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        height: auto;
+        max-height: 0;
+        overflow: hidden;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        background: rgba(7, 17, 31, 0.97);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+        padding: 0;
+        transition: max-height 0.3s ease;
+    }
+
+    #nav-menu.nav-open {
+        max-height: calc(100vh - 60px);
+        overflow-y: auto;
+    }
+
+    #nav-menu li {
+        height: auto;
+        padding: 0;
+    }
+
+    #nav-menu a {
+        display: block;
+        padding: 14px 20px;
+        text-align: left;
+    }
+
+    #nav-menu li:first-child a {
+        padding-top: 16px;
+    }
+
+    #nav-menu a.active::after,
+    #nav-menu a:not(.active)::after {
+        display: none;
+    }
+
+    #nav-menu .nav-lang {
+        height: auto;
+        padding: 14px 20px 16px;
+    }
+
+    .lang-picker {
+        width: 100%;
+        justify-content: flex-start;
+        font-size: 1rem;
+    }
 }

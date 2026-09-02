@@ -71,12 +71,12 @@ class AuthController extends AbstractController
         } catch (\PDOException $e) {
             // Catch unique constraint violation (error 23000) if username is already taken
             if ($e->getCode() === '23000' || str_contains($e->getMessage(), 'UNIQUE')) {
-                return $this->jsonResponse($response, ['error' => 'Toto uživatelské jméno je již zabrané.'], 400);
+                return $this->jsonResponse($response, ['error' => 'This username is already taken.'], 400);
             }
 
             // Log other database errors and return generic message
             error_log("DB Error in updateProfile: " . $e->getMessage());
-            return $this->jsonResponse($response, ['error' => 'Chyba databáze při aktualizaci profilu.'], 500);
+            return $this->jsonResponse($response, ['error' => 'A database error occurred while updating the profile.'], 500);
         }
     }
 }

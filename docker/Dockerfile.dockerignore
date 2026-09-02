@@ -1,0 +1,9 @@
+.git
+.env
+uploads
+vendor
+node_modules
+rag-parser/vendor
+.DS_Store
+default_data/**/_Processed_exr_sequence
+docker/certificates

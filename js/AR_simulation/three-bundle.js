@@ -22417,7 +22417,9 @@ class yS {
       }, n.onmouseleave = function() {
         n.style.opacity = "0.5";
       }, n.onclick = function() {
-        l === null ? navigator.xr.requestSession("immersive-ar", t).then(h) : l.end();
+        l === null ? navigator.xr.requestSession("immersive-ar", t).then(h).catch(function(d) {
+          console.error("Unable to start immersive AR session", d), n.textContent = "START AR", window.alert("Unable to start AR: " + (d && d.message ? d.message : "the browser rejected the WebXR session"));
+        }) : l.end();
       };
     }
     function s() {

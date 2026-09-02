@@ -33,6 +33,10 @@ $containerBuilder->addDefinitions([
     // alias for PDO
     PDO::class => \DI\get('db'),
 
+    \App\Service\EmbeddingClient::class => \DI\autowire()->constructorParameter('config', $config),
+    \App\Service\RagService::class => \DI\autowire()->constructorParameter('config', $config),
+    \App\Service\KnowledgeDocumentService::class => \DI\autowire()->constructorParameter('config', $config),
+    \App\Service\GreetingTranslationService::class => \DI\autowire()->constructorParameter('config', $config),
     \App\Service\AiService::class => \DI\autowire()->constructorParameter('config', $config),
 ]);
 
@@ -106,9 +110,14 @@ $app->group('/programs', function (\Slim\Routing\RouteCollectorProxy $group) use
     $group->delete('/{id:[0-9]+}', [\App\Controller\ProgramController::class, 'delete'])->add($editPrograms);
 })->add($requireCsrf);
 
+$app->group('/knowledge-documents', function (\Slim\Routing\RouteCollectorProxy $group) use ($editCharacters) {
+    $group->get('', [\App\Controller\KnowledgeDocumentController::class, 'getAll']);
+    $group->post('', [\App\Controller\KnowledgeDocumentController::class, 'upload']);
+    $group->delete('/{id:[0-9]+}', [\App\Controller\KnowledgeDocumentController::class, 'delete']);
+})->add($editCharacters)->add($requireCsrf)->add($requireLogin);
+
 $app->group('/ai', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/chat', [\App\Controller\AiController::class, 'chat']);
-    $group->post('/voice', [\App\Controller\AiController::class, 'voice']);
 });
 
 $app->run();

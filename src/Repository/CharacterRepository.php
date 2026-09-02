@@ -40,7 +40,12 @@ class CharacterRepository
                 $row['createdBy'],
                 $row['anim_idle'],
                 $row['anim_talk'],
-                $row['anim_special']
+                $row['anim_special'],
+                $this->decodeTranslations($row['intro_translations'] ?? null),
+                $row['video_talk'] ?? null,
+                $row['video_special'] ?? null,
+                $row['markerOrientation'] ?? 'stand',
+                filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN)
             );
         }
 
@@ -74,7 +79,12 @@ class CharacterRepository
             $row['createdBy'],
             $row['anim_idle'],
             $row['anim_talk'],
-            $row['anim_special']
+            $row['anim_special'],
+            $this->decodeTranslations($row['intro_translations'] ?? null),
+            $row['video_talk'] ?? null,
+            $row['video_special'] ?? null,
+            $row['markerOrientation'] ?? 'stand',
+            filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN)
         );
     }
 
@@ -105,7 +115,12 @@ class CharacterRepository
             $row['createdBy'],
             $row['anim_idle'],
             $row['anim_talk'],
-            $row['anim_special']
+            $row['anim_special'],
+            $this->decodeTranslations($row['intro_translations'] ?? null),
+            $row['video_talk'] ?? null,
+            $row['video_special'] ?? null,
+            $row['markerOrientation'] ?? 'stand',
+            filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN)
         );
     }
 
@@ -128,21 +143,26 @@ class CharacterRepository
     public function create(Character $character): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO characters (name, description, intro, media, typeOfMedia, marker, createdBy, anim_idle, anim_talk, anim_special)
-            VALUES (:name, :description, :intro, :media, :typeOfMedia, :marker, :createdBy, :anim_idle, :anim_talk, :anim_special)
+            INSERT INTO characters (name, description, intro, intro_translations, media, typeOfMedia, marker, createdBy, anim_idle, anim_talk, anim_special, video_talk, video_special, markerOrientation, greenscreen)
+            VALUES (:name, :description, :intro, :intro_translations, :media, :typeOfMedia, :marker, :createdBy, :anim_idle, :anim_talk, :anim_special, :video_talk, :video_special, :markerOrientation, :greenscreen)
         ");
 
         $stmt->execute([
             ':name' => $character->name,
             ':description' => $character->description,
             ':intro' => $character->intro,
+            ':intro_translations' => json_encode($character->introTranslations, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             ':media' => $character->media,
             ':typeOfMedia' => $character->typeOfMedia,
             ':marker' => $character->marker,
             ':createdBy' => $character->createdBy,
             ':anim_idle' => $character->animIdle,
             ':anim_talk' => $character->animTalk,
-            ':anim_special' => $character->animSpecial
+            ':anim_special' => $character->animSpecial,
+            ':video_talk' => $character->videoTalk,
+            ':video_special' => $character->videoSpecial,
+            ':markerOrientation' => $character->markerOrientation,
+            ':greenscreen' => $character->greenscreen ? 1 : 0
         ]);
     }
 
@@ -158,13 +178,18 @@ class CharacterRepository
             SET name = :name,
                 description = :description,
                 intro = :intro,
+                intro_translations = :intro_translations,
                 media = :media,
                 typeOfMedia = :typeOfMedia,
                 marker = :marker,
                 createdBy = :createdBy,
                 anim_idle = :anim_idle,
                 anim_talk = :anim_talk,
-                anim_special = :anim_special
+                anim_special = :anim_special,
+                video_talk = :video_talk,
+                video_special = :video_special,
+                markerOrientation = :markerOrientation,
+                greenscreen = :greenscreen
             WHERE id = :id
         ");
 
@@ -172,6 +197,7 @@ class CharacterRepository
             ':name' => $character->name,
             ':description' => $character->description,
             ':intro' => $character->intro,
+            ':intro_translations' => json_encode($character->introTranslations, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             ':media' => $character->media,
             ':typeOfMedia' => $character->typeOfMedia,
             ':marker' => $character->marker,
@@ -179,7 +205,21 @@ class CharacterRepository
             ':id' => $character->id,
             ':anim_idle' => $character->animIdle,
             ':anim_talk' => $character->animTalk,
-            ':anim_special' => $character->animSpecial
+            ':anim_special' => $character->animSpecial,
+            ':video_talk' => $character->videoTalk,
+            ':video_special' => $character->videoSpecial,
+            ':markerOrientation' => $character->markerOrientation,
+            ':greenscreen' => $character->greenscreen ? 1 : 0
         ]);
+    }
+
+    private function decodeTranslations(?string $json): array
+    {
+        if ($json === null || $json === '') {
+            return [];
+        }
+
+        $translations = json_decode($json, true);
+        return is_array($translations) ? $translations : [];
     }
 }

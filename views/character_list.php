@@ -3,7 +3,8 @@ require_once __DIR__ . '/../backend/init.php';
 
 requirePermissionPage('view');
 
-$page_title = "Seznam postav";
+$page_title = "Characters";
+$page_title_key = 'nav.characters';
 ?>
 
 <?php include __DIR__ . '/../templates/head_content.php'; ?>
@@ -13,14 +14,14 @@ $page_title = "Seznam postav";
     <?php include __DIR__ . '/../templates/navbar.php'; ?>
     
     <main>
-        <h1>Seznam postav</h1>
+        <h1 data-i18n="nav.characters">Characters</h1>
 
         <p id="error-message" class="error-msg hidden"></p>
 
-        <a href="/views/create_character.php" class="button">Vytvořit novou postavu</a>
+        <a href="/views/create_character.php" class="button" data-i18n="list.createCharacter">Create a character</a>
         
         <div id="element-list">
-            <p>Načítám postavy...</p>
+            <p data-i18n="selection.loadingCharacters">Loading characters...</p>
         </div>
     </main>
 

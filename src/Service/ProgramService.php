@@ -50,7 +50,7 @@ class ProgramService
     {
         $program = $this->repository->getById($id);
         if (!$program) {
-            throw new ValidationException("Program nenalezen.", 404);
+            throw new ValidationException("Exhibition not found.", 404);
         }
 
         $scenarioEntities = $this->repository->getScenariosForProgram($id);
@@ -77,18 +77,18 @@ class ProgramService
     private function validateProgram(SaveProgramDTO $dto): void
     {
         if (empty(trim($dto->name))) {
-            throw new ValidationException("Název programu je povinný.", 400);
+            throw new ValidationException("Exhibition name is required.", 400);
         }
         if (strlen($dto->name) > 32) { // Změněno na 32, aby to odpovídalo DB
-            throw new ValidationException("Název programu je příliš dlouhý (max 32 znaků).", 400);
+            throw new ValidationException("Exhibition name is too long (maximum 32 characters).", 400);
         }
         if (empty($dto->scenarioIds)) {
-            throw new ValidationException("Musíte vybrat alespoň jeden scénář.", 400);
+            throw new ValidationException("Select at least one version.", 400);
         }
 
         $nameExists = $this->repository->getByName($dto->name);
         if ($nameExists !== null && $nameExists->id !== $dto->id) {
-            throw new ValidationException("Program s tímto jménem již existuje.", 400);
+            throw new ValidationException("An exhibition with this name already exists.", 400);
         }
     }
 
@@ -110,7 +110,7 @@ class ProgramService
         $hasOwnEdit = hasPermission('editOwnPrograms');
 
         if (!$hasGlobalEdit && !$hasOwnEdit) {
-            throw new ValidationException("Nemáte oprávnění spravovat programy.", 403);
+            throw new ValidationException("You do not have permission to manage exhibitions.", 403);
         }
 
         try {
@@ -119,12 +119,12 @@ class ProgramService
             if ($dto->id > 0) {
                 $existingProgram = $this->repository->getById($dto->id);
                 if (!$existingProgram) {
-                    throw new ValidationException("Program nenalezen.", 404);
+                    throw new ValidationException("Exhibition not found.", 404);
                 }
 
                 // --- BACKEND SECURITY: AUTHORIZATION CHECK ---
                 if (!$hasGlobalEdit && $existingProgram->createdBy !== $currentUserId) {
-                    throw new ValidationException("Nemáte oprávnění upravovat tento program.", 403);
+                    throw new ValidationException("You do not have permission to edit this exhibition.", 403);
                 }
 
                 $program = new Program($dto->id, trim($dto->name), $dto->onGround, $existingProgram->createdBy);
@@ -145,7 +145,7 @@ class ProgramService
         } catch (PDOException $e) {
             $this->db->rollBack();
             error_log("Chyba při ukládání programu: " . $e->getMessage());
-            throw new RuntimeException("Chyba databáze: Nepodařilo se uložit program.", 500);
+            throw new RuntimeException("Database error: The exhibition could not be saved.", 500);
         }
     }
 
@@ -170,7 +170,7 @@ class ProgramService
 
         if (!$hasGlobalEdit) {
             if (!$hasOwnEdit || $program->createdBy !== $currentUserId) {
-                throw new ValidationException("Nemáte oprávnění smazat tento program.", 403);
+                throw new ValidationException("You do not have permission to delete this exhibition.", 403);
             }
         }
 
@@ -180,7 +180,7 @@ class ProgramService
             $this->db->commit();
         } catch (PDOException $e) {
             $this->db->rollBack();
-            throw new RuntimeException("Chyba databáze: Nepodařilo se smazat program.", 500);
+            throw new RuntimeException("Database error: The exhibition could not be deleted.", 500);
         }
     }
 }

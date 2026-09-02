@@ -15,7 +15,7 @@ function requireApiPermission(string $permissionName)
 
         if (!hasPermission($permissionName)) {
             $response = new \Slim\Psr7\Response();
-            $response->getBody()->write(json_encode(['error' => "Nemáte oprávnění: {$permissionName}"]));
+            $response->getBody()->write(json_encode(['error' => "Permission denied: {$permissionName}"]));
 
             return $response->withStatus(403)->withHeader('Content-Type', 'application/json');
         }
@@ -48,7 +48,7 @@ function requireCsrfApi()
             ) {
                 $response = new \Slim\Psr7\Response();
                 $response->getBody()->write(json_encode([
-                    'error' => 'Neplatný bezpečnostní token (CSRF). Obnovte stránku.'
+                    'error' => 'Invalid security token (CSRF). Refresh the page.'
                 ]));
                 return $response->withStatus(403)->withHeader('Content-Type', 'application/json');
             }
@@ -70,7 +70,7 @@ function requireLoginApi()
     return function ($request, $handler) {
         if (empty($_SESSION['user_id'])) {
             $response = new \Slim\Psr7\Response();
-            $response->getBody()->write(json_encode(['error' => 'Pro tuto akci musíte být přihlášeni.']));
+            $response->getBody()->write(json_encode(['error' => 'You must be logged in to perform this action.']));
             return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
         }
 
@@ -100,7 +100,7 @@ function requireAnyApiPermission(array $permissionNames)
         if (!$hasAccess) {
             $response = new \Slim\Psr7\Response();
             $permsString = implode(' nebo ', $permissionNames);
-            $response->getBody()->write(json_encode(['error' => "Nemáte oprávnění: {$permsString}"]));
+            $response->getBody()->write(json_encode(['error' => "Permission denied: {$permsString}"]));
 
             return $response->withStatus(403)->withHeader('Content-Type', 'application/json');
         }

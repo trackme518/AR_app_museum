@@ -1,4 +1,5 @@
 import { ApiService } from '../ApiService.js';
+import { t } from '../localization.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
@@ -47,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.innerHTML = ''; // Clear the loading text
 
             if (programs.length === 0) {
-                listContainer.textContent = 'Zatím žádné programy.';
+                listContainer.dataset.i18n = 'list.noExhibitions';
+                listContainer.textContent = t('list.noExhibitions');
                 return;
             }
 
@@ -66,7 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.dataset.id = program.id;
-                deleteBtn.title = 'Smazat program';
+                deleteBtn.dataset.i18nTitle = 'action.deleteExhibition';
+                deleteBtn.title = t('action.deleteExhibition');
                 deleteBtn.textContent = 'X';
                 
                 // 4. Append link and button to the row, and the row to the container
@@ -77,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("API Error:", error);
             listContainer.innerHTML = ''; // Clear container on error
-            showError(error.message || 'Nepodařilo se načíst programy.');
+            showError(error.message || t('error.exhibitionsLoad'));
         }
     }
 
@@ -92,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('delete-btn')) {
             const id = e.target.dataset.id;
 
-            if (!confirm('Opravdu smazat tento program?')) return;
+            if (!confirm(t('confirm.deleteExhibition'))) return;
 
             clearError();
 
@@ -105,11 +108,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Check if list is empty after deletion and display fallback message
                 if (listContainer.children.length === 0) {
-                    listContainer.textContent = 'Zatím žádné programy.';
+                    listContainer.dataset.i18n = 'list.noExhibitions';
+                    listContainer.textContent = t('list.noExhibitions');
                 }
             } catch (error) {
                 console.error("Delete Error:", error);
-                showError(error.message || 'Chyba při mazání programu.');
+                showError(error.message || t('error.exhibitionDelete'));
             }
         }
     }

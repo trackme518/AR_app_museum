@@ -1,4 +1,5 @@
 import { ApiService } from '../../ApiService.js';
+import { t } from '../../localization.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('edit-profile-form');
@@ -64,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Client-side validation for passwords
         if (newPassword || confirmPassword) {
             if (newPassword !== confirmPassword) {
-                showError('Nová hesla se neshodují.');
+                showError(t('auth.passwordsMismatch'));
                 return;
             }
         }
@@ -74,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await apiService.updateProfile(username, oldPassword, newPassword, confirmPassword, apiCsrfToken);
 
             form.reset(); 
-            showSuccess('Údaje byly úspěšně změněny!');
+            showSuccess(t('auth.updated'));
             
             // Redirect back to profile after 2 seconds
             setTimeout(() => {
@@ -83,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Submit error:', error);
-            showError(error.message || 'Při ukládání změn došlo k chybě.');
+            showError(error.message || t('auth.saveFailed'));
         }
     }
 

@@ -1,4 +1,5 @@
 import { ApiService } from '../ApiService.js';
+import { t } from '../localization.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const listContainer = document.getElementById('user-list');
@@ -46,7 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.innerHTML = '';
 
             if (users.length === 0) {
-                listContainer.innerHTML = '<p>Nenalezeni žádní uživatelé.</p>';
+                const empty = document.createElement('p');
+                empty.dataset.i18n = 'list.noUsers';
+                empty.textContent = t('list.noUsers');
+                listContainer.appendChild(empty);
                 return;
             }
 
@@ -71,7 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.dataset.id = user.id;
-                deleteBtn.title = 'Smazat uživatele';
+                deleteBtn.dataset.i18nTitle = 'action.deleteUser';
+                deleteBtn.title = t('action.deleteUser');
                 deleteBtn.textContent = 'X';
 
                 div.append(link, deleteBtn);
@@ -80,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('API Error:', error);
             listContainer.innerHTML = '';
-            showError(error.message || 'Nepodařilo se připojit k API.');
+            showError(error.message || t('common.apiUnavailable'));
         }
     }
 
@@ -95,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('delete-btn')) {
             const id = e.target.getAttribute('data-id');
 
-            if (!confirm('Opravdu chcete tohoto uživatele smazat?')) return;
+            if (!confirm(t('confirm.deleteUser'))) return;
 
             clearError();
 
@@ -108,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             } catch (error) {
                 console.error("Delete Error:", error);
-                showError(error.message || 'Chyba při mazání uživatele.');
+                showError(error.message || t('error.userDelete'));
             }
         }
     }

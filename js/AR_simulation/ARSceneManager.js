@@ -1,4 +1,5 @@
-import { THREE, ARButton } from './three-bundle.js';
+import { THREE, ARButton } from './three-bundle.js?v=20260821-ar-session-fix';
+import { t } from '../localization.js';
 
 export class ARSceneManager {
     constructor(containerElement, onSelectCallback) {
@@ -9,6 +10,9 @@ export class ARSceneManager {
         this.camera = null;
         this.renderer = null;
         this.controller = null;
+        this.hitTestSource = null;
+        this.hitTestPose = null;
+        this.referenceSpace = null;
 
         this.anchorGroups = [];
         this.videos = [];
@@ -63,25 +67,88 @@ export class ARSceneManager {
         const oldBtn = document.getElementById('ARButton'); 
         if (oldBtn) oldBtn.remove();
 
-        // Create new DOM overlay button with image tracking configuration
-        const arBtn = ARButton.createButton(this.renderer, {
-            requiredFeatures: ['image-tracking'],
-            optionalFeatures: ['dom-overlay'],
+        // Android Chrome and compatible iOS WebXR viewers expose the same API.
+        const sessionOptions = {
+            // Image tracking is still experimental and some WebXR runtimes expose
+            // the API without accepting it as a required session feature. Keeping
+            // it optional lets AR start while trackedImages/getImageTrackingResults
+            // continue to provide marker-only placement when supported.
+            optionalFeatures: ['dom-overlay', 'image-tracking', 'hit-test'],
             domOverlay: { root: document.body },
-            trackedImages: trackedImages
+        };
+        if (trackedImages.length > 0) sessionOptions.trackedImages = trackedImages;
+        const arBtn = ARButton.createButton(this.renderer, sessionOptions);
+
+        // Three.js sets inline positioning (absolute, bottom-centered on the
+        // whole page) and its own English label updates. Drop the inline
+        // styles so the CSS controls placement, and mount the button inside
+        // the selection card, centered below the version selector.
+        arBtn.style.cssText = '';
+        arBtn.dataset.i18n = 'ar.start';
+
+        // The bundled ARButton rewrites its textContent (hardcoded English)
+        // whenever the session state changes. Re-apply the translation after
+        // every such mutation.
+        const applyLabel = () => {
+            const label = t(arBtn.dataset.i18n || 'ar.start');
+            if (arBtn.textContent !== label) arBtn.textContent = label;
+        };
+        new MutationObserver(applyLabel).observe(arBtn, {
+            childList: true,
+            characterData: true,
+            subtree: true,
         });
-        document.body.appendChild(arBtn);
+
+        const wrapper = document.getElementById('scenario-select-wrapper');
+        (wrapper ?? document.body).appendChild(arBtn);
+        applyLabel();
     }
 
-    onSessionStart() {
+    async onSessionStart() {
+        queueMicrotask(() => {
+            const button = document.getElementById('ARButton');
+            if (button) {
+                button.dataset.i18n = 'ar.stop';
+                button.textContent = t('ar.stop');
+            }
+        });
+        const session = this.renderer.xr.getSession();
+        this.referenceSpace = this.renderer.xr.getReferenceSpace();
+        this.referenceSpace?.addEventListener('reset', () => this.resetPlacements(), { once: true });
+        try {
+            const viewerSpace = await session.requestReferenceSpace('viewer');
+            this.hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+        } catch (error) {
+            // Marker placement can still work when this runtime lacks hit testing.
+            console.warn('Surface hit testing is unavailable:', error);
+        }
+
         // Resume all background media when entering AR
-        this.videos.forEach(v => v.play().catch(e => console.warn(e)));
+        this.videos.forEach((video) => {
+            if (video.dataset.videoState === 'idle') {
+                video.play().catch(e => console.warn(e));
+            } else {
+                video.pause();
+            }
+        });
+
     }
 
     onSessionEnd() {
-        // Pause media and hide elements when exiting AR
+        queueMicrotask(() => {
+            const button = document.getElementById('ARButton');
+            if (button) {
+                button.dataset.i18n = 'ar.start';
+                button.textContent = t('ar.start');
+            }
+        });
+        // Ending/resetting the session means its world coordinate system is lost.
         this.videos.forEach(v => v.pause());
-        this.anchorGroups.forEach(g => g.visible = false);
+        this.hitTestSource?.cancel();
+        this.hitTestSource = null;
+        this.hitTestPose = null;
+        this.referenceSpace = null;
+        this.resetPlacements();
     }
 
     handleSelect() {
@@ -92,8 +159,18 @@ export class ARSceneManager {
         
         if (validCharacterObject) {
             this.onSelectCallback(validCharacterObject);
-        } else {
-            console.warn("Clicked on object but no character data found");
+        } else if (this.hitTestPose) {
+            const markerlessGroup = this.anchorGroups.find((group) =>
+                group.userData.markerIndex === null && !group.userData.placed
+            );
+            if (markerlessGroup) {
+                const pose = this.hitTestPose.transform;
+                markerlessGroup.position.copy(pose.position);
+                markerlessGroup.quaternion.copy(pose.orientation);
+                // WebXR hit-test poses are already upright; no correction needed.
+                markerlessGroup.visible = true;
+                markerlessGroup.userData.placed = true;
+            }
         }
     }
 
@@ -125,15 +202,17 @@ export class ARSceneManager {
         return null;
     }
 
-    addObjectToScene(anchorGroup, markerIndex, isVideo = false, videoElement = null) {
+    addObjectToScene(anchorGroup, markerIndex, isVideo = false, videoElements = []) {
         // Register object invisibly and map it to specific image marker
         anchorGroup.visible = false;
         anchorGroup.userData.markerIndex = markerIndex;
+        anchorGroup.userData.isBillboard = isVideo;
+        anchorGroup.userData.placed = false;
         this.scene.add(anchorGroup);
         this.anchorGroups.push(anchorGroup);
         
-        if (isVideo && videoElement) {
-            this.videos.push(videoElement);
+        if (isVideo) {
+            this.videos.push(...(Array.isArray(videoElements) ? videoElements : [videoElements]).filter(Boolean));
         }
     }
 
@@ -146,7 +225,11 @@ export class ARSceneManager {
 
         // Process AR tracking data if available
         if (frame) {
-            this.updateImageTracking(frame);
+            this.updateHitTest(frame);
+            if (typeof frame.getImageTrackingResults === 'function') {
+                this.updateImageTracking(frame);
+                this.updateBillboards(frame);
+            }
         }
 
         this.renderer.render(this.scene, this.camera);
@@ -155,33 +238,64 @@ export class ARSceneManager {
     updateImageTracking(frame) {
         const results = frame.getImageTrackingResults();
         const referenceSpace = this.renderer.xr.getReferenceSpace();
-        const viewerPose = frame.getViewerPose(referenceSpace);
 
         for (const result of results) {
             const anchorGroup = this.anchorGroups.find(g => g.userData.markerIndex === result.index);
             
-            if (anchorGroup && result.trackingState === 'tracked') {
+            if (anchorGroup && !anchorGroup.userData.placed && result.trackingState === 'tracked') {
                 const pose = frame.getPose(result.imageSpace, referenceSpace);
                 
                 if (pose) {
-                    // Update object transform based on marker physical position
                     anchorGroup.visible = true;
+                    anchorGroup.userData.placed = true;
                     anchorGroup.position.copy(pose.transform.position);
                     anchorGroup.quaternion.copy(pose.transform.orientation);
-
-                    // Orient character to always face the user horizontally
-                    if (viewerPose && anchorGroup.children.length > 0) {
-                        const characterModel = anchorGroup.children[0]; 
-                        const viewPos = viewerPose.transform.position;
-                        let cameraWorldPos = new THREE.Vector3(viewPos.x, viewPos.y, viewPos.z);
-
-                        anchorGroup.worldToLocal(cameraWorldPos);
-                        let angle = Math.atan2(cameraWorldPos.x, cameraWorldPos.z);
-                        characterModel.rotation.y = angle; 
-                    }
+                    // WebXR already provides the correct upright orientation; no correction needed.
                 }
             }
         }
+    }
+
+    updateHitTest(frame) {
+        if (!this.hitTestSource) return;
+        const results = frame.getHitTestResults(this.hitTestSource);
+        this.hitTestPose = results.length > 0
+            ? results[0].getPose(this.renderer.xr.getReferenceSpace())
+            : null;
+    }
+
+    resetPlacements() {
+        this.anchorGroups.forEach((group) => {
+            group.visible = false;
+            group.userData.placed = false;
+        });
+    }
+
+    updateBillboards(frame) {
+        const referenceSpace = this.renderer.xr.getReferenceSpace();
+        const viewerPose = frame.getViewerPose(referenceSpace);
+        if (!viewerPose) return;
+
+        const cameraPosition = new THREE.Vector3(
+            viewerPose.transform.position.x,
+            viewerPose.transform.position.y,
+            viewerPose.transform.position.z
+        );
+        this.anchorGroups.forEach((group) => {
+            if (!group.visible || !group.userData.isBillboard || group.children.length === 0) return;
+            const character = group.children[0];
+            if (group.userData.billboardMode !== 'local-yaw') return;
+
+            // Work in the marker's coordinates so the billboard inherits exactly
+            // the same tracked pose as a model. Its only difference is a local-Y
+            // yaw toward the viewer (classic Doom-style cylindrical billboard).
+            group.updateWorldMatrix(true, false);
+            const localCamera = group.worldToLocal(cameraPosition.clone());
+            const yaw = Math.atan2(localCamera.x, localCamera.z);
+            const baseRotation = group.userData.billboardBaseRotation;
+            character.quaternion.copy(baseRotation);
+            character.rotateY(yaw);
+        });
     }
 
     clearScene() {

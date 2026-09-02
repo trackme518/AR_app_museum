@@ -4,36 +4,52 @@
 
 /* --- VARIABLES --- */
 :root {
-    --bg-color: #0f172a; 
-    --text-color: #f8fafc; 
-    --primary-color: #0ea5e9; 
-    --ar-btn-color: #2563eb;
-    --ar-btn-hover: #1d4ed8; 
+    --bg-color: #07111f;
+    --card-bg: rgba(15, 29, 46, 0.92);
+    --card-border: #26374b;
+    --text-color: #e5edf7;
+    --text-strong: #f8fafc;
+    --text-muted: #aebed0;
+    --primary-color: #38bdf8;
+    --primary-hover: #7dd3fc;
+    --primary-contrast: #03131f;
+    --ar-btn-color: #38bdf8;
+    --ar-btn-hover: #7dd3fc;
     --danger-color: #ef4444;
-    --glass-bg: rgba(15, 23, 42, 0.85);
+    --glass-bg: rgba(15, 29, 46, 0.92);
     --transition: 0.2s ease;
 }
 
 /* --- BASE STYLES --- */
 body {
-    background: var(--bg-color); 
+    color-scheme: dark;
+    background:
+        radial-gradient(circle at top, rgba(14, 165, 233, 0.18), transparent 38rem),
+        var(--bg-color);
+    background-attachment: fixed;
+    min-height: 100vh;
     color: var(--text-color);
-    font-family: 'Segoe UI', sans-serif; 
-    margin: 0; 
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 0;
     overflow-x: hidden;
 }
 
-h1 {
-    font-weight: 300; 
-    letter-spacing: 2px; 
-    margin-bottom: 2rem;
-    text-shadow: 0 0 10px rgba(14, 165, 233, 0.5); 
-    width: 100%; 
-    text-align: center;
+main {
+    padding: 24px 18px 48px;
 }
 
-.hidden { 
-    display: none !important; 
+h1 {
+    color: var(--text-strong);
+    font-weight: 800;
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    letter-spacing: -0.02em;
+    margin: 1rem 0 2rem;
+    text-align: center;
+    width: 100%;
+}
+
+.hidden {
+    display: none !important;
 }
 
 /* --- WEBXR / THREE.JS CANVAS --- */
@@ -48,30 +64,30 @@ canvas {
 }
 
 /* --- THREE.JS AR BUTTON --- 
+   Mounted inside #scenario-select-wrapper (see ARSceneManager.setupARButton),
+   centered directly below the version selector.
    Using 'body' to increase specificity instead of !important 
 */
 body #ARButton {
+    display: block;
+    margin: 20px auto 0;
     background: var(--ar-btn-color); 
-    color: #ffffff; 
+    color: var(--primary-contrast); 
     border: none;
-    border-radius: 8px; 
+    border-radius: 12px; 
     padding: 14px 28px; 
-    font-weight: bold;
+    font-weight: 800;
     text-transform: uppercase; 
-    box-shadow: 0 0 20px rgba(37, 99, 235, 0.6);
-    position: absolute; 
-    bottom: 50px; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    z-index: 100;
+    letter-spacing: 0.06em;
+    box-shadow: 0 10px 30px rgba(56, 189, 248, 0.35);
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 body #ARButton:hover { 
     background: var(--ar-btn-hover); 
-    transform: translateX(-50%) scale(1.05); 
-    box-shadow: 0 0 25px rgba(29, 78, 216, 0.8);
+    transform: scale(1.05); 
+    box-shadow: 0 12px 35px rgba(125, 211, 252, 0.45);
 }
 
 body #ARButton:disabled { 
@@ -88,42 +104,49 @@ body #ARButton:disabled {
     max-width: 400px; 
     margin: 40px auto; 
     text-align: center;
-    background: var(--glass-bg); 
+    background: var(--card-bg); 
     backdrop-filter: blur(10px); 
     padding: 2rem; 
-    border-radius: 12px; 
-    border: 1px solid rgba(255, 255, 255, 0.15); 
+    border-radius: 16px; 
+    border: 1px solid var(--card-border); 
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2); 
 }
 
 #scenario-select-wrapper select option {
-    background-color: var(--bg-color);
+    background-color: #0f1d2e;
     color: var(--text-color);
 }
 
 #scenario-select-wrapper label { 
     display: block; 
-    font-size: 1.1rem; 
-    color: #cbd5e1; 
+    font-size: 1.05rem; 
+    font-weight: 600;
+    color: var(--text-strong); 
     margin-bottom: 15px; 
 }
 
 #scenario-select-wrapper select, 
 #ai-chat-input {
     width: 100%; 
-    padding: 10px 15px; 
-    background: rgba(255, 255, 255, 0.05); 
+    padding: 11px 15px; 
+    background: rgba(7, 17, 31, 0.6); 
     box-sizing: border-box;
     color: var(--text-color); 
-    border: 1px solid #334155; 
-    border-radius: 8px; 
+    border: 1px solid var(--card-border); 
+    border-radius: 10px; 
     font: inherit; 
     transition: all var(--transition);
+}
+
+#scenario-select-wrapper select:hover, 
+#ai-chat-input:hover { 
+    border-color: #35506b; 
 }
 
 #scenario-select-wrapper select:focus, 
 #ai-chat-input:focus { 
     border-color: var(--primary-color); 
-    box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); 
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); 
     outline: none; 
 }
 
@@ -131,16 +154,37 @@ body #ARButton:disabled {
     margin-top: 20px;
 }
 
+.ar-help {
+    margin: 14px 0 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
 /* --- DEVICE NOT SUPPORTED WARNING --- */
 #ar-not-supported {
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 22px;
     text-align: center;
-    margin-top: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+}
+
+#ar-not-supported p {
+    color: var(--text-muted);
+    line-height: 1.6;
 }
 
 #qr-code {
     display: block;
     margin: 0 auto;
     max-width: 250px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 16px;
 }
 
 /* --- FULLSCREEN AR HUD CONTAINER --- */
@@ -165,17 +209,17 @@ body #ARButton:disabled {
     z-index: 1001; 
     width: 40px; 
     height: 40px;
-    background: rgba(0, 0, 0, 0.6); 
-    border: 1px solid rgba(255, 255, 255, 0.2); 
-    border-radius: 8px;
-    color: #cbd5e1; 
+    background: rgba(7, 17, 31, 0.6); 
+    border: 1px solid rgba(125, 211, 252, 0.25); 
+    border-radius: 12px;
+    color: var(--text-color); 
     font: 300 24px/1 inherit; 
     display: flex; 
     align-items: center; 
     justify-content: center;
     cursor: pointer; 
     backdrop-filter: blur(4px); 
-    transition: all 0.3s ease;
+    transition: all 0.3s ease; 
 }
 
 #exit-ar-btn:hover { 
@@ -194,11 +238,11 @@ body #ARButton:disabled {
     right: 6%; 
     z-index: 9999;
     background: var(--glass-bg); 
-    border: 1px solid rgba(255, 255, 255, 0.15); 
-    border-radius: 12px;
+    border: 1px solid var(--card-border); 
+    border-radius: 16px;
     backdrop-filter: blur(12px); 
     padding: 1.5rem; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35); 
     display: flex; 
     flex-direction: column; 
     gap: 10px;
@@ -216,8 +260,8 @@ body #ARButton:disabled {
     width: 30px; 
     height: 30px; 
     z-index: 10002;
-    background: #475569; 
-    border: 1px solid #94a3b8; 
+    background: #26374b; 
+    border: 1px solid #35506b; 
     border-radius: 50%; 
     color: #fff;
     font: bold 14px inherit; 
@@ -229,7 +273,7 @@ body #ARButton:disabled {
 }
 
 #hide-ai-btn:hover { 
-    background: #64748b; 
+    background: #35506b; 
 }
 
 #ai-response {
@@ -238,10 +282,11 @@ body #ARButton:disabled {
     max-height: 200px; 
     overflow-y: auto; 
     white-space: pre-wrap;
-    background: rgba(0, 0, 0, 0.3); 
+    background: rgba(7, 17, 31, 0.6); 
     color: #e2e8f0; 
+    border: 1px solid var(--card-border); 
     border-left: 3px solid var(--primary-color);
-    border-radius: 8px; 
+    border-radius: 10px; 
     padding: 12px; 
     font-size: 14px; 
     line-height: 1.5;
@@ -254,21 +299,47 @@ body #ARButton:disabled {
 #ai-submit-btn, 
 #stt-btn {
     background: var(--primary-color); 
-    color: #fff; 
+    color: var(--primary-contrast); 
     border: none; 
-    border-radius: 8px; 
+    border-radius: 10px; 
     padding: 10px;
-    font: bold 15px inherit; 
+    font: 800 15px inherit; 
     cursor: pointer; 
-    transition: background 0.2s; 
+    transition: background var(--transition); 
     width: 60%; 
     margin: 8px auto 0; 
     display: block;
 }
 
+#tts-toggle-btn {
+    display: block;
+    width: 46px;
+    height: 42px;
+    margin: 10px auto 0;
+    padding: 0;
+    border: 1px solid #35506b;
+    border-radius: 50%;
+    color: var(--text-color);
+    background: #16283d;
+    font-size: 21px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+#tts-toggle-btn[aria-pressed="true"] {
+    border-color: var(--primary-color);
+    background: #0369a1;
+    color: #fff;
+}
+
+#tts-toggle-btn:hover {
+    border-color: var(--primary-color);
+}
+
 #ai-submit-btn:hover, 
 #stt-btn:hover { 
-    background: #0284c7; 
+    background: var(--primary-hover); 
 }
 
 /* --- BUTTON LOADING STATES --- */
@@ -278,10 +349,10 @@ textarea:disabled {
     opacity: 0.6; 
     cursor: not-allowed; 
     background: rgba(255,255,255,0.1) !important; 
-}
+} 
 
 #ai-submit-btn.loading { 
-    background: #334155; 
+    background: #26374b; 
     cursor: wait; 
 }
 
@@ -304,7 +375,7 @@ body #keyboard-wrapper {
     height: 40px;
     background: white;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: 10px;
     padding: 10px;
     font-family: sans-serif;
     display: flex;

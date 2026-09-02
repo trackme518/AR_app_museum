@@ -28,7 +28,12 @@ class Character
         public int $createdBy,
         public ?string $animIdle = null,
         public ?string $animTalk = null,
-        public ?string $animSpecial = null
+        public ?string $animSpecial = null,
+        public array $introTranslations = [],
+        public ?string $videoTalk = null,
+        public ?string $videoSpecial = null,
+        public ?string $markerOrientation = 'stand',
+        public bool $greenscreen = false
     ) {
     }
 }

@@ -31,7 +31,11 @@ class SaveCharacterDTO
         public string $characterType,
         public ?string $animIdle,
         public ?string $animTalk,
-        public ?string $animSpecial
+        public ?string $animSpecial,
+        public ?array $videoTalkFile,
+        public ?array $videoSpecialFile,
+        public ?string $markerOrientation = 'stand',
+        public bool $greenscreen = false
     ) {
     }
 }

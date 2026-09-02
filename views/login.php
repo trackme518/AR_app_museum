@@ -7,7 +7,8 @@ if (isset($_SESSION['user_id'])) {
     exit;
 }
 
-$page_title = "Přihlášení";
+$page_title = "Log in";
+$page_title_key = 'nav.login';
 ?>
 
 <?php include __DIR__ . '/../templates/head_content.php'; ?>
@@ -18,25 +19,25 @@ $page_title = "Přihlášení";
     <?php include __DIR__ . '/../templates/navbar.php'; ?>
     
     <main>
-        <h1>Přihlášení</h1>
+        <h1 data-i18n="nav.login">Log in</h1>
         
         <form id="login-form">
-            <label for="username">Uživatelské jméno:</label>
+            <label for="username"><span data-i18n="auth.username">Username</span>:</label>
             <input type="text" id="username" name="username" 
-                    placeholder="Zadejte uživatelské jméno" 
+                    data-i18n-placeholder="auth.enterUsername" placeholder="Enter your username"
                     autocomplete="username" required>
             <br>
 
-            <label for="password">Heslo:</label>
+            <label for="password"><span data-i18n="auth.password">Password</span>:</label>
             <input type="password" id="password" name="password" 
-                    placeholder="Zadejte heslo" 
+                    data-i18n-placeholder="auth.enterPassword" placeholder="Enter your password"
                     autocomplete="current-password" required>
             <br>
 
             <p id="error-message" class="error-msg hidden"></p>
             <br>
             
-            <button type="submit">Přihlásit se</button>
+            <button type="submit" data-i18n="nav.login">Log in</button>
         </form>
     </main>
 

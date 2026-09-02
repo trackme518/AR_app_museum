@@ -3,7 +3,8 @@ require_once __DIR__ . '/../backend/init.php';
 
 requirePermissionPage('view');
 
-$page_title = "Seznam programů";
+$page_title = "Exhibitions";
+$page_title_key = 'nav.exhibitions';
 ?>
 
 <?php include __DIR__ . '/../templates/head_content.php'; ?>
@@ -13,14 +14,14 @@ $page_title = "Seznam programů";
     <?php include __DIR__ . '/../templates/navbar.php'; ?>
     
     <main>
-        <h1>AR programy</h1>
+        <h1 data-i18n="nav.exhibitions">Exhibitions</h1>
 
         <p id="error-message" class="error-msg hidden"></p>
 
-        <a href="/views/create_program.php" class="button">Vytvořit nový program</a>
+        <a href="/views/create_program.php" class="button" data-i18n="list.createExhibition">Create an exhibition</a>
         
         <div id="program_list">
-            <p>Načítám programy...</p>
+            <p data-i18n="selection.loadingExhibitions">Loading exhibitions...</p>
         </div>
     </main>
 

@@ -32,7 +32,7 @@ class AuthService
         $user = $this->userRepository->findByUsername($dto->username);
 
         if (!$user || !password_verify($dto->password, $user->passwordHash)) {
-            throw new ValidationException("Špatné uživatelské jméno nebo heslo.", 401);
+            throw new ValidationException("Incorrect username or password.", 401);
         }
 
         // rehash password if hash algorithm gets changed
@@ -62,13 +62,13 @@ class AuthService
     {
         // 1. Validate basic required fields
         if (empty(trim($dto->username))) {
-            throw new ValidationException("Uživatelské jméno nesmí být prázdné.", 400);
+            throw new ValidationException("Username cannot be empty.", 400);
         }
         if (strlen($dto->username) < 3) {
-            throw new ValidationException("Uživatelské jméno musí mít alespoň 3 znaky.", 400);
+            throw new ValidationException("Username must be at least 3 characters long.", 400);
         }
         if (empty($dto->oldPassword)) {
-            throw new ValidationException("Pro uložení změn musíte zadat současné heslo.", 400);
+            throw new ValidationException("Enter your current password to save changes.", 400);
         }
 
         // 2. Validate new password if user intends to change it
@@ -76,17 +76,17 @@ class AuthService
 
         if ($isChangingPassword) {
             if ($dto->newPassword !== $dto->confirmPassword) {
-                throw new ValidationException("Nová hesla se neshodují.", 400);
+                throw new ValidationException("The new passwords do not match.", 400);
             }
             if (strlen($dto->newPassword) < 5) {
-                throw new ValidationException("Nové heslo musí mít alespoň 5 znaků.", 400);
+                throw new ValidationException("The new password must be at least 5 characters long.", 400);
             }
         }
 
         // 3. Verify user identity
         $user = $this->userRepository->findById($userId);
         if (!$user || !password_verify($dto->oldPassword, $user->passwordHash)) {
-            throw new ValidationException("Současné heslo není správné.", 400);
+            throw new ValidationException("The current password is incorrect.", 400);
         }
 
         // 4. Apply changes to the entity

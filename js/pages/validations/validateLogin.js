@@ -1,4 +1,5 @@
 import { ApiService } from '../../ApiService.js';
+import { t } from '../../localization.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // exit if elements are missing
     if (!form || !username || !password) {
-        console.warn("Chybí prvky formuláře pro login.");
+        console.warn("Login form elements are missing.");
         return;
     }
 
@@ -33,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (value === ''){
             username.classList.add('invalid');
-            username.setCustomValidity("Uživatelské jméno je prázdné");
+            username.setCustomValidity(t('auth.usernameRequired'));
         } else {
             username.classList.remove("invalid");
             username.setCustomValidity("");
@@ -47,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkPassword(){
         if (password.value === ''){
             password.classList.add("invalid");
-            password.setCustomValidity("Heslo je prázdné");
+            password.setCustomValidity(t('auth.passwordRequired'));
         } else {
             password.classList.remove("invalid");
             password.setCustomValidity("");
@@ -78,8 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = '/index.php';
 
         } catch (err) {
-            console.error("Chyba přihlášení:", err);
-            errorMsg.textContent = err.message || 'Kritická chyba: Nepodařilo se připojit k API.';
+            console.error("Login failed:", err);
+            errorMsg.textContent = err.message || t('common.apiUnavailable');
             errorMsg.classList.remove('hidden');
         }
     }

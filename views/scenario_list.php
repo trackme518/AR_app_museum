@@ -3,7 +3,8 @@ require_once __DIR__ . '/../backend/init.php';
 
 requirePermissionPage('view');
 
-$page_title = "Seznam scénářů";
+$page_title = "Versions";
+$page_title_key = 'nav.versions';
 ?>
 
 <?php include __DIR__ . '/../templates/head_content.php'; ?>
@@ -13,14 +14,14 @@ $page_title = "Seznam scénářů";
     <?php include __DIR__ . '/../templates/navbar.php'; ?>
     
     <main>
-        <h1>AR Scénáře</h1>
+        <h1 data-i18n="nav.versions">Versions</h1>
 
         <p id="error-message" class="error-msg hidden"></p>
 
-        <a href="/views/create_scenario.php" class="button">Vytvořit nový scénář</a>
+        <a href="/views/create_scenario.php" class="button" data-i18n="list.createVersion">Create a version</a>
         
         <div id="scenario_list">
-            <p>Načítám scénáře...</p>
+            <p data-i18n="selection.loadingVersions">Loading versions...</p>
         </div>
     </main>
 

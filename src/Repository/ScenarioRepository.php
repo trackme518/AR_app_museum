@@ -115,7 +115,12 @@ class ScenarioRepository
                 $row['createdBy'],
                 $row['anim_idle'],
                 $row['anim_talk'],
-                $row['anim_special']
+                $row['anim_special'],
+                is_array($translations = json_decode($row['intro_translations'] ?? '', true)) ? $translations : [],
+                $row['video_talk'] ?? null,
+                $row['video_special'] ?? null,
+                $row['markerOrientation'] ?? 'stand',
+                filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN)
             );
         }
 

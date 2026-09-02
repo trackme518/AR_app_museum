@@ -1,4 +1,5 @@
 import { ApiService } from '../../ApiService.js';
+import { t } from '../../localization.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('user-form');
@@ -42,7 +43,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const defaultOption = document.createElement('option');
             defaultOption.value = "";
-            defaultOption.textContent = "Vyberte roli";
+            defaultOption.dataset.i18n = 'selection.selectRole';
+            defaultOption.textContent = t('selection.selectRole');
             roleSelect.appendChild(defaultOption);
 
             roles.forEach(role => {
@@ -62,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } catch (error) {
             console.error("Error:", error);
-            showError('Chyba při inicializaci formuláře (nelze načíst data).');
+            showError(t('user.formLoadFailed'));
         }
     }
 
@@ -91,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } catch (error) {
             console.error('Submit error:', error);
-            showError(error.message || 'Při ukládání uživatele došlo k chybě.');
+            showError(error.message || t('user.saveFailed'));
         }
     }
 

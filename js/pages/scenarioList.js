@@ -1,4 +1,5 @@
 import { ApiService } from '../ApiService.js';
+import { t } from '../localization.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
@@ -41,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.innerHTML = ''; // Clear the loading text
 
             if (scenarios.length === 0) {
-                listContainer.textContent = 'Zatím žádné scénáře.';
+                listContainer.dataset.i18n = 'list.noVersions';
+                listContainer.textContent = t('list.noVersions');
                 return;
             }
 
@@ -60,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.dataset.id = scenario.id;
-                deleteBtn.title = 'Smazat scénář';
+                deleteBtn.dataset.i18nTitle = 'action.deleteVersion';
+                deleteBtn.title = t('action.deleteVersion');
                 deleteBtn.textContent = 'X';
 
                 // 4. Append link and button to the row, and the row to the container
@@ -70,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('API Error:', error);
             listContainer.innerHTML = ''; // Clear container on error
-            showError(error.message || 'Nepodařilo se načíst scénáře.');
+            showError(error.message || t('error.versionsLoad'));
         }
     }
 
@@ -85,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('delete-btn')) {
             const id = e.target.dataset.id;
 
-            if (!confirm('Opravdu smazat tento scénář?')) return;
+            if (!confirm(t('confirm.deleteVersion'))) return;
 
             clearError();
 
@@ -98,11 +101,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Check if list is empty after deletion and display fallback message
                 if (listContainer.children.length === 0) {
-                    listContainer.textContent = 'Zatím žádné scénáře.';
+                    listContainer.dataset.i18n = 'list.noVersions';
+                    listContainer.textContent = t('list.noVersions');
                 }
             } catch (error) {
                 console.error('Delete Error:', error);
-                showError(error.message || 'Chyba při mazání scénáře.');
+                showError(error.message || t('error.versionDelete'));
             }
         }
     }

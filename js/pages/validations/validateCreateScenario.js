@@ -1,4 +1,5 @@
 import { ApiService } from '../../ApiService.js';
+import { t } from '../../localization.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
@@ -44,7 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
-        defaultOption.textContent = 'Vyberte postavu';
+        defaultOption.dataset.i18n = 'selection.selectCharacter';
+        defaultOption.textContent = t('selection.selectCharacter');
         select.appendChild(defaultOption);
 
         // Populate options safely using textContent
@@ -62,7 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'remove-btn';
-        btn.title = 'Odebrat postavu';
+        btn.dataset.i18nTitle = 'common.remove';
+        btn.title = t('common.remove');
         btn.textContent = 'X';
 
         div.append(select, btn);
@@ -85,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // FRONTEND AUTHORIZATION CHECK
                 if (!hasGlobalEdit && scenario.createdBy !== currentUserId) {
-                    alert('Nemáte oprávnění upravovat tento scénář.');
+                    alert(t('permission.version'));
                     window.location.href = '/views/scenario_list.php';
                     return;
                 }
@@ -102,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Initialization error:', error);
-            showError('Chyba při načítání dat ze serveru.');
+            showError(t('common.dataLoadFailed'));
         }
     }
 
@@ -132,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = '/views/scenario_list.php';
         } catch (error) {
             console.error('Submit error:', error);
-            showError(error.message || 'Kritická chyba: Nepodařilo se připojit k API.');
+            showError(error.message || t('common.apiUnavailable'));
         }
     }
 

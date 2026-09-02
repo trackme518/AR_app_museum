@@ -1,19 +1,36 @@
-import { setupQRCodeMode } from './qrLauncher.js';
+import { isMobileDevice, setupQRCodeMode } from './qrLauncher.js';
 import { ChatController } from './ChatController.js';
-import { ARSpawner } from './ARSpawner.js';
+import { ARSpawner } from './ARSpawner.js?v=20260821-world-placement';
 import { ApiService } from './../ApiService.js';
+import { getCurrentLocale } from './languageConfig.js';
+import { t } from '../localization.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check WebXR support and fallback to QR mode 
-    if ('xr' in navigator) {
-        const supported = await navigator.xr.isSessionSupported('immersive-ar');
-        
-        if (!supported) {
-            setupQRCodeMode(window.location.href);
-            return;
-        }
-    } else {
-        setupQRCodeMode(window.location.href);
+    const targetUrl = window.location.href;
+
+    // A desktop is a launcher surface even if an attached runtime happens to
+    // expose navigator.xr. The handheld device owns the camera AR session.
+    if (!isMobileDevice()) {
+        await setupQRCodeMode(targetUrl, 'desktop');
+        return;
+    }
+
+    if (!window.isSecureContext) {
+        await setupQRCodeMode(targetUrl, 'insecure');
+        return;
+    }
+
+    let supported = false;
+    try {
+        supported = Boolean(navigator.xr)
+            && await navigator.xr.isSessionSupported('immersive-ar');
+    } catch (error) {
+        console.warn('Unable to query immersive AR support:', error);
+    }
+    // WebXR only. On iOS the Launchar runtime (third party, see README) must
+    // provide navigator.xr; unsupported browsers get the QR launcher instead.
+    if (!supported) {
+        await setupQRCodeMode(targetUrl, 'unsupported');
         return;
     }
 
@@ -21,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const programSelect = document.getElementById('program-select');
     const scenarioSelect = document.getElementById('scenario-select');
     const scenarioWrapper = document.getElementById('scenario-wrapper');
+    const languageSelect = document.getElementById('language-select');
     const exitArBtn = document.getElementById('exit-ar-btn');
     const aiContainer = document.getElementById('ai-container');
 
@@ -31,6 +49,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // when chat is closed, enable AR objects selection
         arSpawner.enableSelection();
     });
+
+    languageSelect.value = getCurrentLocale();
+    window.addEventListener('ar-museum-locale-change', () => chatController.handleLocaleChange());
 
     // Initialize AR spawner
     const arSpawner = new ARSpawner(
@@ -49,13 +70,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch and populate programs on load
     try {
         const programs = await apiService.getPrograms();
-        programSelect.innerHTML =
-            '<option value="" disabled selected>Vyberte program</option>';
+        const exhibitionOption = new Option(t('selection.selectExhibition'), '', true, true);
+        exhibitionOption.disabled = true;
+        exhibitionOption.dataset.i18n = 'selection.selectExhibition';
+        programSelect.replaceChildren(exhibitionOption);
         programs.forEach((p) => programSelect.add(new Option(p.name, p.id)));
     } catch (error) {
-        console.error("Chyba načítání programů:", error);
-        programSelect.innerHTML =
-            '<option value="" disabled>Chyba načítání</option>';
+        console.error("Failed to load exhibitions:", error);
+        const errorOption = new Option(t('common.loadingFailed'), '', true, true);
+        errorOption.disabled = true;
+        errorOption.dataset.i18n = 'common.loadingFailed';
+        programSelect.replaceChildren(errorOption);
     }
 
     /**
@@ -73,8 +98,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function handleProgramSelection(e) {
         const programId = e.target.value;
         scenarioWrapper.classList.remove('hidden');
-        scenarioSelect.innerHTML =
-            '<option value="" disabled selected>Načítám scénáře...</option>';
+        const loadingOption = new Option(t('selection.loadingVersions'), '', true, true);
+        loadingOption.disabled = true;
+        loadingOption.dataset.i18n = 'selection.loadingVersions';
+        scenarioSelect.replaceChildren(loadingOption);
 
         try {
             const programData = await apiService.getProgramDetails(programId);
@@ -85,21 +112,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             const scenarios = programData.scenarios || [];
 
             if (scenarios.length === 0) {
-                scenarioSelect.innerHTML =
-                    '<option value="" disabled selected>Žádné scénáře</option>';
+                const emptyOption = new Option(t('selection.noVersions'), '', true, true);
+                emptyOption.disabled = true;
+                emptyOption.dataset.i18n = 'selection.noVersions';
+                scenarioSelect.replaceChildren(emptyOption);
                 return;
             }
 
             // Populate scenario drop-down
-            scenarioSelect.innerHTML =
-                '<option value="" disabled selected>Vyberte scénář</option>';
+            const versionOption = new Option(t('selection.selectVersion'), '', true, true);
+            versionOption.disabled = true;
+            versionOption.dataset.i18n = 'selection.selectVersion';
+            scenarioSelect.replaceChildren(versionOption);
             scenarios.forEach((s) =>
                 scenarioSelect.add(new Option(s.name, s.id))
             );
         } catch (error) {
             console.error(error);
-            scenarioSelect.innerHTML =
-                '<option value="" disabled>Chyba načítání</option>';
+            const errorOption = new Option(t('common.loadingFailed'), '', true, true);
+            errorOption.disabled = true;
+            errorOption.dataset.i18n = 'common.loadingFailed';
+            scenarioSelect.replaceChildren(errorOption);
         }
     }
 
@@ -116,6 +149,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await apiService.getScenarioDetails(scenarioId);
         const isGround = scenarioSelect.dataset.onGround === 'true';
         if (data && data.characters) {
+            data.characters.forEach((character) => {
+                character.exhibitionId = Number(programSelect.value);
+            });
             arSpawner.loadCharacters(data.characters, isGround);
         }
     }

@@ -50,7 +50,7 @@ class ScenarioService
     {
         $scenario = $this->repository->getById($id);
         if (!$scenario) {
-            throw new ValidationException("Scénář nenalezen", 404);
+            throw new ValidationException("Version not found.", 404);
         }
 
         $characterEntities = $this->repository->getCharactersForScenario($id);
@@ -67,7 +67,12 @@ class ScenarioService
                 $char->createdBy,
                 $char->animIdle,
                 $char->animTalk,
-                $char->animSpecial
+                $char->animSpecial,
+                $char->introTranslations,
+                $char->videoTalk,
+                $char->videoSpecial,
+                $char->markerOrientation ?: 'stand',
+                $char->greenscreen ?? false
             );
         }, $characterEntities);
 
@@ -88,20 +93,20 @@ class ScenarioService
     private function validateScenario(SaveScenarioDTO $dto): void
     {
         if (empty(trim($dto->name))) {
-            throw new ValidationException("Název scénáře je povinný.", 400);
+            throw new ValidationException("Version name is required.", 400);
         }
 
         if (strlen($dto->name) > 32) { // Changed to match your DB Schema (VARCHAR 32)
-            throw new ValidationException("Název scénáře je příliš dlouhý (max 32 znaků).", 400);
+            throw new ValidationException("Version name is too long (maximum 32 characters).", 400);
         }
 
         if (empty($dto->characterIds)) {
-            throw new ValidationException("Musíte vybrat alespoň jednu postavu.", 400);
+            throw new ValidationException("Select at least one character.", 400);
         }
 
         $nameExists = $this->repository->getByName($dto->name);
         if ($nameExists !== null && $nameExists->id !== $dto->id) {
-            throw new ValidationException("Scénář s tímto jménem již existuje.", 400);
+            throw new ValidationException("A version with this name already exists.", 400);
         }
     }
 
@@ -123,7 +128,7 @@ class ScenarioService
         $hasOwnEdit = hasPermission('editOwnScenarios');
 
         if (!$hasGlobalEdit && !$hasOwnEdit) {
-            throw new ValidationException("Nemáte oprávnění spravovat scénáře.", 403);
+            throw new ValidationException("You do not have permission to manage versions.", 403);
         }
 
         try {
@@ -132,12 +137,12 @@ class ScenarioService
             if ($dto->id > 0) {
                 $existingScenario = $this->repository->getById($dto->id);
                 if (!$existingScenario) {
-                    throw new ValidationException("Scénář nenalezen.", 404);
+                    throw new ValidationException("Version not found.", 404);
                 }
 
                 // --- BACKEND SECURITY: AUTHORIZATION CHECK ---
                 if (!$hasGlobalEdit && $existingScenario->createdBy !== $currentUserId) {
-                    throw new ValidationException("Nemáte oprávnění upravovat tento scénář.", 403);
+                    throw new ValidationException("You do not have permission to edit this version.", 403);
                 }
 
                 $scenario = new Scenario($dto->id, trim($dto->name), $existingScenario->createdBy);
@@ -158,7 +163,7 @@ class ScenarioService
         } catch (PDOException $e) {
             $this->db->rollBack();
             error_log("Chyba při ukládání scénáře: " . $e->getMessage());
-            throw new RuntimeException("Chyba databáze: Nepodařilo se uložit scénář.", 500);
+            throw new RuntimeException("Database error: The version could not be saved.", 500);
         }
     }
 
@@ -174,7 +179,7 @@ class ScenarioService
     {
         $scenario = $this->repository->getById($id);
         if (!$scenario) {
-            throw new ValidationException("Scénář nenalezen.", 404);
+            throw new ValidationException("Version not found.", 404);
         }
 
         // --- BACKEND SECURITY: AUTHORIZATION CHECK ---
@@ -183,7 +188,7 @@ class ScenarioService
 
         if (!$hasGlobalEdit) {
             if (!$hasOwnEdit || $scenario->createdBy !== $currentUserId) {
-                throw new ValidationException("Nemáte oprávnění smazat tento scénář.", 403);
+                throw new ValidationException("You do not have permission to delete this version.", 403);
             }
         }
 
@@ -194,7 +199,7 @@ class ScenarioService
         } catch (PDOException $e) {
             $this->db->rollBack();
             error_log("Chyba při mazání scénáře: " . $e->getMessage());
-            throw new RuntimeException("Chyba databáze: Nepodařilo se smazat scénář.", 500);
+            throw new RuntimeException("Database error: The version could not be deleted.", 500);
         }
     }
 }

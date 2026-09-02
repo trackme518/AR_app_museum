@@ -1,5 +1,7 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS knowledge_chunks;
+DROP TABLE IF EXISTS knowledge_documents;
 DROP TABLE IF EXISTS scenario_character;
 DROP TABLE IF EXISTS scenarios;
 DROP TABLE IF EXISTS program_scenario;
@@ -45,6 +47,7 @@ CREATE TABLE characters (
     name VARCHAR(32) NOT NULL UNIQUE,
     description TEXT NOT NULL,
     intro TEXT NOT NULL,
+    intro_translations JSON NOT NULL,
     media TEXT NOT NULL,
     typeOfMedia VARCHAR(16) NOT NULL DEFAULT 'photo',
     marker TEXT NOT NULL,
@@ -52,6 +55,10 @@ CREATE TABLE characters (
     anim_idle TEXT DEFAULT NULL,
     anim_talk TEXT DEFAULT NULL,
     anim_special TEXT DEFAULT NULL,
+    video_talk TEXT DEFAULT NULL,
+    video_special TEXT DEFAULT NULL,
+    markerOrientation VARCHAR(16) NOT NULL DEFAULT 'stand',
+    greenscreen TINYINT(1) NOT NULL DEFAULT 0,
     CONSTRAINT fk_char_user FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -88,6 +95,35 @@ CREATE TABLE scenario_character (
     CONSTRAINT fk_sc_char FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE knowledge_documents (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    original_name VARCHAR(255) NOT NULL,
+    stored_path VARCHAR(512) NOT NULL,
+    mime_type VARCHAR(128) NOT NULL,
+    file_size BIGINT UNSIGNED NOT NULL,
+    content_hash CHAR(64) NOT NULL,
+    uploaded_by INT NOT NULL,
+    exhibition_id INT DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_knowledge_content (content_hash),
+    CONSTRAINT fk_knowledge_user FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_knowledge_exhibition FOREIGN KEY (exhibition_id) REFERENCES programs(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- EmbeddingGemma produces 768-dimensional vectors. If the embedding model is
+-- changed, migrate this column and update EMBEDDING_DIMENSION in .env.
+CREATE TABLE knowledge_chunks (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    document_id BIGINT UNSIGNED NOT NULL,
+    chunk_index INT UNSIGNED NOT NULL,
+    content TEXT NOT NULL,
+    embedding VECTOR(768) NOT NULL,
+    UNIQUE KEY unique_document_chunk (document_id, chunk_index),
+    CONSTRAINT fk_chunk_document FOREIGN KEY (document_id)
+        REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+    VECTOR INDEX (embedding) DISTANCE=cosine
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- inserting data
 INSERT INTO roles (id, role_name) VALUES (1, 'admin'), (2, 'user'), (3, 'editor');
 
@@ -102,7 +138,3 @@ SELECT 2, id FROM permissions WHERE permission_name = 'view';
 
 INSERT INTO role_permission (role_id, permission_id) 
 SELECT 3, id FROM permissions WHERE permission_name != 'maintainUsers';
-
--- Admin (heslo 'heslo')
-INSERT INTO users (username, password, role_id)
-VALUES ('admin', 'SEMDEJTEHASH', 1);
