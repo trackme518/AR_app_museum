@@ -1,0 +1,30 @@
+name: ar_museum_edge
+
+# Traefik edge: TLS termination and routing for the AR Museum app stack.
+# Deploy alongside docker/compose.yaml (the app stack). Both stacks share
+# the external "proxy" network:
+#
+#   docker network create proxy
+#
+services:
+  traefik:
+    image: traefik:v3.5
+    env_file:
+      - ../../.env
+    entrypoint: ["/bin/sh", "/etc/traefik/ar-museum-edge-entrypoint.sh"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./entrypoint.sh:/etc/traefik/ar-museum-edge-entrypoint.sh:ro
+      - letsencrypt_data:/letsencrypt
+    networks:
+      - proxy
+    restart: unless-stopped
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  letsencrypt_data:

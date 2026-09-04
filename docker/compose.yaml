@@ -1,26 +1,13 @@
 name: ar_museum
 
+# Application stack: PHP app + MariaDB. TLS/routing lives in the edge stack
+# (docker/edge/compose.yaml). Both stacks share the external "proxy" network:
+#
+#   docker network create proxy
+#
 services:
-  traefik:
-    image: traefik:v3.5
-    env_file:
-      - ../.env
-    entrypoint: ["/bin/sh", "/etc/traefik/ar-museum-entrypoint.sh"]
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      app:
-        condition: service_healthy
-    volumes:
-      - ./traefik-entrypoint.sh:/etc/traefik/ar-museum-entrypoint.sh:ro
-      - ./certificates/server:/certs:ro
-      - letsencrypt_data:/letsencrypt
-    networks:
-      - frontend
-    restart: unless-stopped
-
   app:
+    image: ghcr.io/trackme518/ar_museum-app:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -33,9 +20,8 @@ services:
         condition: service_healthy
     volumes:
       - uploads_data:/var/www/html/uploads
-      - ./certificates/public:/var/www/html/certificates:ro
     networks:
-      - frontend
+      - proxy
       - backend
     restart: unless-stopped
 
@@ -55,7 +41,6 @@ services:
       start_period: 20s
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ../help_files/setup_db.sql:/docker-entrypoint-initdb.d/001-setup.sql:ro
     networks:
       - backend
     restart: unless-stopped
@@ -63,9 +48,9 @@ services:
 volumes:
   mariadb_data:
   uploads_data:
-  letsencrypt_data:
 
 networks:
-  frontend:
+  proxy:
+    external: true
   backend:
     internal: true

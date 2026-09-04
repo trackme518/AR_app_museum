@@ -1,5 +1,4 @@
 .env
-/docker/certificates/
 /uploads/knowledge/
 /vendor/
 /rag-parser/vendor/

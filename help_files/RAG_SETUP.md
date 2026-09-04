@@ -17,7 +17,9 @@ For an existing installation, run:
 SOURCE help_files/migrate_mariadb_rag.sql;
 ```
 
-For a clean installation, `help_files/setup_db.sql` already contains the RAG tables.
+For a clean installation, `docker/schema.sql` (applied automatically by the app
+to an empty database) already contains the RAG tables; `help_files/setup_db.sql`
+is the manual reset variant of the same schema.
 
 ## Configuration
 

@@ -11,7 +11,7 @@ branch. This branch contains the subsequent development work.
 The application uses standard **WebXR only** (`navigator.xr`): immersive AR sessions, image tracking when the runtime exposes it (it stays an optional feature, so AR still starts without it), and hit testing for markerless placement. Three.js and its AR button are bundled in `js/AR_simulation/three-bundle.js`; nothing is downloaded at runtime.
 
 - **Android**: Chrome on a WebXR-capable device works out of the box.
-- **iOS**: Safari does not implement WebXR. You must set up [Launchar](https://launchar.app) — or another WebXR compatibility layer for iOS — for yourself. Launchar is a **third-party product and not part of this codebase**; we provide no warranty or support for it. Register your app at launchar.app, put the issued key in `LAUNCHAR_APP_KEY` in `.env`, and the app will embed the Launchar SDK, which launches the AR session in the Launchar runtime. Leave `LAUNCHAR_APP_KEY` empty to disable the SDK entirely; unsupported browsers then fall back to the QR launcher screen.
+- **iOS**: Safari does not implement WebXR. You must set up [Launchar](https://launchar.app) — or another WebXR compatibility layer for iOS — for yourself. Launchar is a **third-party product and not part of this codebase**; we provide no warranty or support for it. Register your app at launchar.app, put the issued key in `LAUNCHAR_APP_KEY` in `.env`, and the app will embed the Launchar SDK. On iOS the Start AR button then hands the user over to the Launchar Launch Card, which opens the page inside the Launchar viewer where WebXR is available and the normal AR flow starts. Leave `LAUNCHAR_APP_KEY` empty to disable the SDK entirely; unsupported browsers then fall back to the QR launcher screen.
 - Desktop remains a QR launcher rather than opening a camera session.
 
 Start the application:
@@ -20,7 +20,46 @@ Start the application:
 ./build.sh
 ```
 
-`build.sh` first generates any missing UI translations and then builds and starts Docker. The translation step requires the configured AI endpoint to be reachable.
+`build.sh` first generates any missing UI translations and then builds and starts the application stack (app + MariaDB). TLS runs in a separate Traefik edge stack; see [docker/README.md](docker/README.md) for the two-stack setup and HTTPS deployment.
+
+## HTTPS
+
+Certificates come from Let's Encrypt via the **DNS-01 challenge**, so one
+universal setup covers both a public VPS and a private museum LAN: set
+`APP_HOSTNAME` to your domain and point its A record at the server — the
+public IP when online, the LAN address when private (a short TTL, e.g. 60 s,
+makes switching quick). No certificate files, local CAs, or reachable ports
+are involved; the browser trusts the certificate because it is a normal
+Let's Encrypt certificate for your hostname.
+
+### Why DNS provider credentials are needed
+
+To prove you control the hostname, Let's Encrypt requires a temporary
+`_acme-challenge.<hostname>` **TXT record** inside your domain's DNS zone.
+Only your DNS provider can write to that zone, so Traefik creates and removes
+the record automatically through the provider's **API** — that is what the
+credentials in `.env` are for. This matters beyond the first issuance:
+certificates are valid 90 days and renew **unattended roughly every 60 days**,
+forever. Without API access (`LEGODNS_PROVIDER=manual`), Traefik logs the TXT
+value and waits — a person must add it by hand at every issuance *and* every
+renewal, which defeats the purpose.
+
+The provider is selected generically with `LEGODNS_PROVIDER`; the credential
+variable names are fixed by [lego, Traefik's ACME client](https://go-acme.github.io/lego/dns/)
+and differ per provider (e.g. `WEDOS_USERNAME`/`WEDOS_WAPI_PASSWORD` for WEDOS,
+`CF_DNS_API_TOKEN` for Cloudflare). Configure the pair for your provider as
+documented there — `.env.example` lists the common ones.
+
+Operational notes:
+
+- The server needs **outbound** internet (DNS provider API + Let's Encrypt) at
+  issuance/renewal time; it never needs to be reachable from the outside.
+- Let's Encrypt allows **5 certificate requests per hostname per week**.
+  The ACME state lives in the edge stack's `letsencrypt_data` volume, so keep
+  it across redeploys (never `down -v` the edge stack).
+- Use `ACME_STAGING=true` while testing: the staging CA has no strict rate
+  limits but issues certificates browsers do not trust. Turn it off for
+  production.
 
 Markers are plain uploaded images (JPG/PNG/WebP). They are passed directly to the WebXR runtime as tracked images at session start; no target preprocessing is required.
 
@@ -79,7 +118,7 @@ SUPPORTED_LOCALES={"en-US":"English","de-DE":"Deutsch","cs-CZ":"Čeština"}
 
 The locale selection controls four connected features:
 
-1. i18next translates the editor, navigation, certificate setup, validation, chat,
+1. i18next translates the editor, navigation, validation, chat,
    and AR controls at runtime.
 2. The virtual chat keyboard uses a layout appropriate for the selected locale.
 3. Chat requests include the selected locale so the configured LLM answers in that

@@ -82,8 +82,4 @@ return [
     'launchar' => [
         'app_key' => (string)$env('LAUNCHAR_APP_KEY', ''),
     ],
-    'deployment' => [
-        'local_network' => $envBool('LOCAL_NETWORK', true),
-        'hostname' => (string)$env('APP_HOSTNAME', '10.0.0.30'),
-    ],
 ];

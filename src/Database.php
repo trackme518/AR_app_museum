@@ -81,6 +81,7 @@ class Database
                 $dbConfig['charset']
             );
             self::$pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], $options);
+            self::provisionSchema(self::$pdo);
             self::seedInitialAdmin(self::$pdo, $dbConfig);
 
             return self::$pdo;
@@ -89,6 +90,67 @@ class Database
 
             throw new RuntimeException("Připojení k databázi selhalo, zkuste to prosím později.", 503, $e);
         }
+    }
+
+    /**
+     * Creates the initial schema when the database contains no tables.
+     * Runs once per connection and is guarded by a server-side named lock,
+     * so concurrent first requests cannot race the provisioning.
+     */
+    private static function provisionSchema(PDO $pdo): void
+    {
+        $locked = (int)$pdo->query("SELECT COALESCE(GET_LOCK('ar_museum_schema', 60), 0)")->fetchColumn() === 1;
+        if (!$locked) {
+            throw new RuntimeException('Timed out waiting for the schema provisioning lock.');
+        }
+
+        try {
+            $tables = (int)$pdo->query(
+                "SELECT COUNT(*) FROM information_schema.tables
+                 WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'"
+            )->fetchColumn();
+            if ($tables > 0) {
+                return;
+            }
+
+            $schemaFile = dirname(__DIR__) . '/docker/schema.sql';
+            $sql = @file_get_contents($schemaFile);
+            if ($sql === false) {
+                throw new RuntimeException("Schema file is missing: {$schemaFile}");
+            }
+            foreach (self::splitStatements($sql) as $statement) {
+                $pdo->exec($statement);
+            }
+            error_log('[schema] Empty database detected; initial schema created.');
+        } finally {
+            $pdo->query("SELECT RELEASE_LOCK('ar_museum_schema')");
+        }
+    }
+
+    /**
+     * Splits plain SQL into executable statements. The bundled schema
+     * contains no procedures or semicolons inside string literals.
+     *
+     * @return list<string>
+     */
+    private static function splitStatements(string $sql): array
+    {
+        $codeLines = [];
+        foreach (preg_split('/\R/', $sql) ?: [] as $line) {
+            if (str_starts_with(trim($line), '--')) {
+                continue;
+            }
+            $codeLines[] = $line;
+        }
+
+        $statements = [];
+        foreach (explode(';', implode("\n", $codeLines)) as $statement) {
+            $statement = trim($statement);
+            if ($statement !== '') {
+                $statements[] = $statement;
+            }
+        }
+        return $statements;
     }
 
     private static function seedInitialAdmin(PDO $pdo, array $dbConfig): void

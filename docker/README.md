@@ -1,60 +1,110 @@
 # Docker deployment
 
-The stack contains Apache with PHP 8.3 and MariaDB 11.8 LTS. MariaDB stores both
-application data and native RAG vectors; no additional vector server is required.
+The deployment consists of two Compose stacks that share one external Docker
+network:
 
-## Local HTTPS start
+- **App stack** (`docker/compose.yaml`): Apache with PHP 8.3 and MariaDB 11.8
+  LTS. MariaDB stores both application data and native RAG vectors; no
+  additional vector server is required.
+- **Edge stack** (`docker/edge/compose.yaml`): Traefik, which terminates TLS
+  and routes traffic to the app container.
 
-Configure local mode in `APP/.env`:
-
-```dotenv
-LOCAL_NETWORK=true
-APP_HOSTNAME=10.0.0.30
-ACME_EMAIL=example@example.com
+```text
+internet / LAN ──> traefik :80/:443 ──https──> app :80 (internal network)
+                                   └─ acme DNS-01 ──> your DNS provider
 ```
 
-From `APP`, generate the local CA and IP certificate once, then deploy:
+## One-time network setup
 
 ```bash
-./docker/generate_certificate.sh
-docker compose --env-file .env -f docker/compose.yaml up --build -d
-docker compose --env-file .env -f docker/compose.yaml ps
+docker network create proxy
 ```
 
-Open `http://10.0.0.30` to download the certificate appropriate for iOS,
-Android, or desktop. After installing and trusting the local CA, open
-`https://10.0.0.30`.
+## HTTPS via Let's Encrypt DNS-01
 
-The generated CA is preserved under the ignored `docker/certificates` directory.
-Running the generator again preserves that CA and regenerates only a missing,
-expiring, invalid, or wrong-IP server certificate.
+Certificates are issued for `APP_HOSTNAME` using the **DNS-01 ACME challenge**:
+the server creates a temporary `_acme-challenge` TXT record through your DNS
+provider's API, so **the server never needs to be reachable from the internet**
+to obtain or renew a certificate. The same setup therefore serves both:
 
-## Online HTTPS start
+- **Public VPS**: point the A record of `APP_HOSTNAME` at the server's public IP.
+- **Private/museum LAN**: point the same A record at the server's LAN address
+  (e.g. `10.0.0.30`). Visitors on that network resolve the name locally; the
+  certificate remains browser-trusted. Switching deployment targets is just an
+  A-record edit (keep the TTL short, e.g. 60 s).
 
-Configure a public domain that resolves to the deployment server:
+Configure `.env`:
 
 ```dotenv
-LOCAL_NETWORK=false
-APP_HOSTNAME=museum.example.org
-ACME_EMAIL=admin@example.org
+APP_HOSTNAME=arapp.example.com
+ACME_EMAIL=admin@example.com
+ACME_STAGING=false
+LEGODNS_PROVIDER=wedos
+WEDOS_USERNAME=...
+WEDOS_WAPI_PASSWORD=...
 ```
 
-Do not run the local certificate generator. Start Docker Compose normally.
-Traefik obtains and renews a Let's Encrypt certificate using HTTP-01, so public
-ports 80 and 443 must reach this server. HTTP is redirected to HTTPS in online
-mode. Only Traefik publishes host ports; Apache/PHP and MariaDB remain internal.
+`LEGODNS_PROVIDER` accepts any [lego DNS provider](https://go-acme.github.io/lego/dns/)
+name (cloudflare, hetzner, powerdns, ...) together with that provider's own
+credential variables. `manual` waits for you to create the TXT record yourself.
+For WEDOS, generate the WAPI password in the WEDOS administration and add the
+server's **public IP** to the WAPI allow-list there.
 
-Persistent data is split into two named volumes:
+Set `ACME_STAGING=true` while testing: Let's Encrypt's staging CA issues
+throwaway certificates without strict rate limits. Never leave it on in
+production.
 
-- `ar_museum_mariadb_data` stores MariaDB data and RAG vectors.
-- `ar_museum_uploads_data` stores character media, video states, GLB models, markers,
-  and original RAG documents.
-- `ar_museum_letsencrypt_data` stores Traefik ACME state for online deployments.
+## Starting the stacks
 
-Rebuilding or recreating containers preserves both volumes. The database schema is
-imported automatically only when the MariaDB volume is new. To intentionally reset
-all local data, use `docker compose down -v`; never include `-v` during a routine
-restart or deployment.
+The app image is published to **`ghcr.io/trackme518/ar_museum-app`** (tags:
+`latest` and `sha-<commit>`, architectures `amd64` and `arm64`) by the
+`Build and publish app image` GitHub Action. A server can therefore deploy
+without building anything:
+
+```bash
+# on the server, with docker/compose.yaml and .env present
+docker compose --env-file .env -f docker/compose.yaml pull app
+docker compose --env-file .env -f docker/compose.yaml up -d
+```
+
+For local development, `build.sh` builds the image from source instead
+(`--build`). Pin a server to a known-good build by setting the app service's
+`image:` tag to the corresponding `sha-<commit>` tag.
+
+```bash
+# app (also runs ./build.sh for you)
+./build.sh
+
+# edge (TLS)
+docker compose --env-file .env -f docker/edge/compose.yaml up -d
+docker compose --env-file .env -f docker/edge/compose.yaml logs traefik
+```
+
+On the first request Traefik requests the certificate and shows its own
+self-signed fallback until issuance completes (usually under a minute). Only
+Traefik publishes host ports; the app and MariaDB stay on internal networks.
+HTTP is permanently redirected to HTTPS.
+
+## Renewals, rate limits, and volumes
+
+Traefik renews certificates automatically about 30 days before expiry;
+renewal only needs outbound HTTPS to your DNS provider and Let's Encrypt.
+Let's Encrypt enforces **5 certificates per week per hostname**, so the ACME
+state must survive redeploys:
+
+- App stack volumes: `ar_museum_mariadb_data` (database + RAG vectors) and
+  `ar_museum_uploads_data` (media, markers, knowledge documents).
+- Edge stack volume: `ar_museum_edge_letsencrypt_data` (ACME account and
+  certificates).
+
+`docker compose down -v` on the **app stack** never touches the edge volume.
+Only reset the edge volume deliberately (or while `ACME_STAGING=true`),
+otherwise every reset triggers a fresh certificate request.
+
+When the application first connects to an empty database it creates the schema
+itself (`docker/schema.sql`, applied by `src/Database.php`); the default
+exhibition, characters, and RAG documents are then loaded by the startup
+provisioning script.
 
 ## LM Studio
 
@@ -63,7 +113,7 @@ restart or deployment.
 loaded, and network serving enabled. Test from the container with:
 
 ```bash
-docker compose exec app curl -sS http://10.0.0.30:1234/v1/models
+docker compose --env-file .env -f docker/compose.yaml exec app curl -sS http://10.0.0.30:1234/v1/models
 ```
 
 If LM Studio API authentication is enabled, copy its token into `AI_API_TOKEN` in
@@ -77,8 +127,6 @@ The selected model must actually support `/v1/embeddings` and return 768 dimensi
 Many instruction/chat models do not expose embeddings; if this model does not, load a
 dedicated embedding model in LM Studio and update `EMBEDDING_MODEL` accordingly.
 
-Speech recognition and speech synthesis run in the browser through the Web Speech
-
 ## AR Runtime (WebXR)
 
 The application uses standard WebXR only; no AR engine is bundled or installed in
@@ -86,6 +134,6 @@ Docker. Android Chrome works natively. For iOS you need a third-party WebXR
 compatibility layer such as [Launchar](https://launchar.app), which is **not part
 of this codebase** — register at launchar.app and set `LAUNCHAR_APP_KEY` in
 `APP/.env` (see the main README). Without a key, iOS devices fall back to the QR
-launcher screen.
-
-API; no separate speech API key or server audio endpoint is needed.
+launcher screen. Speech recognition and speech synthesis run in the browser
+through the Web Speech API; no separate speech API key or server audio endpoint
+is needed.
