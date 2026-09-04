@@ -68,9 +68,13 @@ canvas {
    centered directly below the version selector.
    Using 'body' to increase specificity instead of !important 
 */
-body #ARButton {
-    display: block;
+body #ARButton, body #ar-session-error button {
+    /* Flex centering: Chrome mis-centers wrapped text inside plain buttons. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin: 20px auto 0;
+    text-align: center;
     background: var(--ar-btn-color); 
     color: var(--primary-contrast); 
     border: none;
@@ -84,17 +88,25 @@ body #ARButton {
     transition: all 0.3s ease;
 }
 
-body #ARButton:hover { 
+body #ARButton:hover, body #ar-session-error button:hover { 
     background: var(--ar-btn-hover); 
     transform: scale(1.05); 
     box-shadow: 0 12px 35px rgba(125, 211, 252, 0.45);
 }
 
-body #ARButton:disabled { 
+body #ARButton:disabled, body #ar-session-error button:disabled { 
     color: #94a3b8; 
     opacity: 0.5; 
     pointer-events: none; 
     box-shadow: none; 
+}
+
+#ar-session-error {
+    margin: 14px auto 0;
+    max-width: 340px;
+    text-align: center;
+    color: #fca5a5;
+    font-size: 0.9rem;
 }
 
 /* --- SCENARIO SELECTION UI --- */

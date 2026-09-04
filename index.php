@@ -14,12 +14,14 @@ $launcharKey = trim((string)($config['launchar']['app_key'] ?? ''));
     <script>eruda.init();</script>-->
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/css/index.css">
-    <link rel="stylesheet" href="/css/ARSimulation.css">
+    <link rel="stylesheet" href="/css/ARSimulation.css?v=<?php echo time(); ?>">
 
 <?php if ($launcharKey !== ''): ?>
     <!-- Launchar: third-party WebXR runtime for iOS (https://launchar.app).
-         Not part of this codebase; requires a LAUNCHAR_APP_KEY. See README. -->
-    <script src="https://launchar.app/sdk/v1?key=<?= htmlspecialchars($launcharKey, ENT_QUOTES, 'UTF-8') ?>&redirect=true"></script>
+         Not part of this codebase; requires a LAUNCHAR_APP_KEY. See README.
+         No redirect= parameter: the Start AR button hands iOS users over to
+         the Launch viewer itself (see js/AR_simulation/main.js). -->
+    <script src="https://launchar.app/sdk/v1?key=<?= htmlspecialchars($launcharKey, ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php endif; ?>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">

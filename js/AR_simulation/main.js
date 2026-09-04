@@ -1,4 +1,4 @@
-import { isMobileDevice, setupQRCodeMode } from './qrLauncher.js';
+import { isMobileDevice, setupQRCodeMode, getVLaunchLaunchInfo, setupLaunchMode } from './qrLauncher.js';
 import { ChatController } from './ChatController.js';
 import { ARSpawner } from './ARSpawner.js?v=20260821-world-placement';
 import { ApiService } from './../ApiService.js';
@@ -27,8 +27,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.warn('Unable to query immersive AR support:', error);
     }
-    // WebXR only. On iOS the Launchar runtime (third party, see README) must
-    // provide navigator.xr; unsupported browsers get the QR launcher instead.
+    // Without navigator.xr (iOS Safari) the embedded Launchar SDK (third
+    // party, see README) reports whether its viewer can provide WebXR; then
+    // the Start AR button redirects there instead of showing the QR screen.
+    let launchInfo = null;
+    if (!supported && window.VLaunch) {
+        launchInfo = await getVLaunchLaunchInfo();
+        if (launchInfo && !launchInfo.launchRequired) launchInfo = null;
+    }
+    if (launchInfo) {
+        setupLaunchMode(launchInfo);
+        return;
+    }
+    // Unsupported browsers (no WebXR, no Launchar handoff) get the QR launcher.
     if (!supported) {
         await setupQRCodeMode(targetUrl, 'unsupported');
         return;

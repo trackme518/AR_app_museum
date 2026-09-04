@@ -78,6 +78,7 @@ export class ARSceneManager {
         };
         if (trackedImages.length > 0) sessionOptions.trackedImages = trackedImages;
         const arBtn = ARButton.createButton(this.renderer, sessionOptions);
+        this.hookSessionFailures();
 
         // Three.js sets inline positioning (absolute, bottom-centered on the
         // whole page) and its own English label updates. Drop the inline
@@ -101,7 +102,55 @@ export class ARSceneManager {
 
         const wrapper = document.getElementById('scenario-select-wrapper');
         (wrapper ?? document.body).appendChild(arBtn);
+        arBtn.addEventListener('click', () => this.clearSessionError());
         applyLabel();
+    }
+
+    // The bundled ARButton reports failed requestSession() calls through a
+    // raw English window.alert. While a session request is in flight the
+    // alert is swapped for a localized message. Denied permissions also get
+    // a reload action, because browsers will not prompt again until the
+    // page is reloaded (there is no API to re-request a denied permission).
+    hookSessionFailures() {
+        if (ARSceneManager.sessionFailureHooked || !navigator.xr) return;
+        ARSceneManager.sessionFailureHooked = true;
+        const requestSession = navigator.xr.requestSession.bind(navigator.xr);
+        const nativeAlert = window.alert.bind(window);
+        const notify = (message) => this.showSessionError(message);
+        navigator.xr.requestSession = (mode, options) => {
+            let active = true;
+            window.alert = (message) => {
+                if (active) notify(message);
+                else nativeAlert(message);
+            };
+            return requestSession(mode, options).finally(() => {
+                active = false;
+                window.alert = nativeAlert;
+            });
+        };
+    }
+
+    clearSessionError() {
+        document.getElementById('ar-session-error')?.remove();
+    }
+
+    showSessionError(message) {
+        const wrapper = document.getElementById('scenario-select-wrapper');
+        if (!wrapper) return;
+        this.clearSessionError();
+        const box = document.createElement('div');
+        box.id = 'ar-session-error';
+        box.setAttribute('role', 'alert');
+        const text = document.createElement('p');
+        text.textContent = /not allowed|denied/i.test(message)
+            ? t('ar.permissionDenied')
+            : message;
+        const retry = document.createElement('button');
+        retry.dataset.i18n = 'ar.start';
+        retry.textContent = t('ar.start');
+        retry.addEventListener('click', () => window.location.reload());
+        box.append(text, retry);
+        wrapper.appendChild(box);
     }
 
     async onSessionStart() {
