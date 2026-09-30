@@ -1,5 +1,7 @@
 # AR Museum
 
+[![Watch Demo](https://img.youtube.com/vi/0d5yA-w4cuQ/maxresdefault.jpg)](https://youtube.com/shorts/0d5yA-w4cuQ?feature=share)
+
 PHP/MariaDB application for marker- and surface-placed historical AR characters.
 
 The original code associated with Ondřej Sýkora's bachelor thesis is preserved
