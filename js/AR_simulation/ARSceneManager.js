@@ -1,4 +1,4 @@
-import { THREE, ARButton } from './three-bundle.js?v=20260821-ar-session-fix';
+import { THREE, ARButton } from './three-bundle.js';
 import { t } from '../localization.js';
 
 export class ARSceneManager {

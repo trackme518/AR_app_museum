@@ -5,6 +5,7 @@ const config = window.AR_MUSEUM_LANGUAGE_CONFIG || {
 };
 
 const storageKey = 'ar_museum_locale';
+const cacheKey = 'ar_museum_i18n_cache';
 const savedLocale = window.localStorage.getItem(storageKey);
 let currentLocale = Object.hasOwn(config.locales, savedLocale)
     ? savedLocale
@@ -23,11 +24,28 @@ async function loadResources() {
     if (!catalog.resources || typeof catalog.resources !== 'object') {
         throw new Error('UI_translations.json does not contain i18next resources.');
     }
+    // Persist the catalog so the pre-paint script in templates/navbar.php can
+    // translate the navigation synchronously on the next page load (no flash
+    // of the default language on every navigation).
+    try {
+        window.localStorage.setItem(cacheKey, JSON.stringify(catalog.resources));
+    } catch (error) {
+        console.warn('Could not cache UI translations:', error);
+    }
     return catalog.resources;
 }
 
-await window.i18next.init({
-    resources: await loadResources(),
+function readCachedResources() {
+    try {
+        const raw = window.localStorage.getItem(cacheKey);
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+const i18nextOptions = (resources) => ({
+    resources,
     lng: currentLocale,
     fallbackLng: config.defaultLocale,
     supportedLngs: Object.keys(config.locales),
@@ -37,6 +55,25 @@ await window.i18next.init({
     interpolation: { escapeValue: false },
     returnNull: false,
 });
+
+// Initialize instantly from the cached catalog when available; otherwise
+// wait for the network fetch (first visit only).
+const cachedResources = readCachedResources();
+await window.i18next.init(i18nextOptions(cachedResources || await loadResources()));
+
+// Stale-while-revalidate: refresh the catalog in the background and only
+// re-translate if it actually changed (identical strings cause no reflow).
+if (cachedResources) {
+    try {
+        const fresh = await loadResources();
+        if (JSON.stringify(fresh) !== JSON.stringify(cachedResources)) {
+            await window.i18next.init(i18nextOptions(fresh));
+            translatePage();
+        }
+    } catch (error) {
+        // Network refresh failed: keep using the cached catalog.
+    }
+}
 
 export function getLocale() {
     return currentLocale;

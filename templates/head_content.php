@@ -12,7 +12,8 @@ $configuredDefaultLocale = $localizationConfig['localization']['default_locale']
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <link href="/css/navbar.css?v=<?= time() ?>" rel="stylesheet">
+    <link href="/css/base.css?v=<?= filemtime(__DIR__ . '/../css/base.css') ?>" rel="stylesheet">
+    <link href="/css/navbar.css?v=<?= filemtime(__DIR__ . '/../css/navbar.css') ?>" rel="stylesheet">
     
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
 

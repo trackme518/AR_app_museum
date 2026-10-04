@@ -1,23 +1,9 @@
-:root {
-    --bg-color: #0f172a;
-    --text-color: #f8fafc;
-    --muted-color: #94a3b8;
-    --primary-color: #0ea5e9;
-    --danger-color: #ef4444;
-    --radius: 8px;
-    --transition: 0.3s ease;
-}
+/* Shared design tokens (colors, fonts, body background) come from
+   css/base.css, loaded by templates/head_content.php on every page.
+   This file only contains form-specific styling. */
 
 *, *::before, *::after {
     box-sizing: border-box;
-}
-
-body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    padding-bottom: 60px;
 }
 
 main {
@@ -46,7 +32,7 @@ form {
 
 form p {
     text-align: center;
-    color: var(--muted-color);
+    color: var(--text-muted);
     font-size: 0.9em;
     margin-bottom: 20px;
 }
@@ -56,7 +42,7 @@ form p {
     background: rgba(34, 197, 94, 0.1);
     border: 1px solid #22c55e;
     padding: 12px 20px;
-    border-radius: var(--radius);
+    border-radius: 8px;
     text-align: center;
     margin-bottom: 20px;
     font-weight: 500;
@@ -66,7 +52,7 @@ form p {
 label {
     display: block;
     margin: 20px 0 8px;
-    color: var(--muted-color);
+    color: var(--text-muted);
     font-weight: 500;
     font-size: 0.9rem;
 }
@@ -82,7 +68,7 @@ select {
     padding: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid #334155;
-    border-radius: var(--radius);
+    border-radius: 8px;
     color: var(--text-color);
     font: inherit;
     transition: all var(--transition);
@@ -114,7 +100,7 @@ textarea {
 
 fieldset {
     border: 1px solid #334155;
-    border-radius: var(--radius);
+    border-radius: 8px;
     padding: 20px;
     margin-top: 30px;
     background: rgba(0, 0, 0, 0.2);
@@ -128,7 +114,7 @@ legend {
 
 fieldset p {
     font-size: 0.9em;
-    color: var(--muted-color);
+    color: var(--text-muted);
     margin-top: 0;
 }
 
@@ -153,13 +139,19 @@ input[type='submit'] {
     margin-top: 30px;
     padding: 12px;
     background: var(--primary-color);
-    color: var(--text-color);
+    color: var(--text-strong);
     border: none;
-    border-radius: var(--radius);
+    border-radius: 8px;
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
     transition: all var(--transition);
+}
+
+button[type='submit']:disabled,
+input[type='submit']:disabled {
+    opacity: 0.75;
+    cursor: wait;
 }
 
 button[type='submit']:hover,
@@ -173,7 +165,7 @@ form a {
     display: block;
     text-align: center;
     margin-top: 15px;
-    color: var(--muted-color);
+    color: var(--text-muted);
     text-decoration: none;
     font-size: 0.9rem;
 }
@@ -188,7 +180,7 @@ form a:hover {
     padding: 20px;
     text-align: center;
     border: 2px dashed #334155;
-    border-radius: var(--radius);
+    border-radius: 8px;
 }
 
 .media-preview {
@@ -196,7 +188,7 @@ form a:hover {
     text-align: center;
     padding: 15px;
     background: rgba(0, 0, 0, 0.3);
-    border-radius: var(--radius);
+    border-radius: 8px;
 }
 
 .media-preview img,
@@ -211,7 +203,7 @@ form a:hover {
     background: rgba(127, 29, 29, 0.25);
     border: 1px solid var(--danger-color);
     padding: 12px;
-    border-radius: var(--radius);
+    border-radius: 8px;
     text-align: center;
     margin-bottom: 25px;
     font-weight: bold;
@@ -240,7 +232,7 @@ form a:hover {
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid var(--danger-color);
     color: var(--danger-color);
-    border-radius: var(--radius);
+    border-radius: 8px;
     font-weight: bold;
 }
 
@@ -257,7 +249,7 @@ form a:hover {
     background: transparent;
     border: 1px dashed #334155;
     color: var(--primary-color);
-    border-radius: var(--radius);
+    border-radius: 8px;
     font-weight: 600;
 }
 

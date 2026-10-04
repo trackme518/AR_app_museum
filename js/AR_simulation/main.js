@@ -1,6 +1,6 @@
 import { isMobileDevice, setupQRCodeMode, getVLaunchLaunchInfo, setupLaunchMode } from './qrLauncher.js';
 import { ChatController } from './ChatController.js';
-import { ARSpawner } from './ARSpawner.js?v=20260821-world-placement';
+import { ARSpawner } from './ARSpawner.js';
 import { ApiService } from './../ApiService.js';
 import { getCurrentLocale } from './languageConfig.js';
 import { t } from '../localization.js';

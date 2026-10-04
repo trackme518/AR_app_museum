@@ -2,6 +2,7 @@
   "name": "ar-museum-browser-dependencies",
   "private": true,
   "dependencies": {
-    "i18next": "26.4.1"
+    "i18next": "26.4.1",
+    "simple-keyboard": "3.8.192"
   }
 }

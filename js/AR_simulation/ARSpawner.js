@@ -1,11 +1,11 @@
-import { ARSceneManager } from './ARSceneManager.js?v=20260821-world-placement';
+import { ARSceneManager } from './ARSceneManager.js';
 import {
     createVideoTexture,
     createImageTexture,
     createCharacterMesh,
     loadGLTFModel,
-} from './spriteUtils.js?v=20260821-world-placement';
-import { THREE } from './three-bundle.js?v=20260821-ar-session-fix';
+} from './spriteUtils.js';
+import { THREE } from './three-bundle.js';
 
 export class ARSpawner {
     constructor(chatContainer, onCharacterClickCallback) {

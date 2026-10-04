@@ -13,8 +13,8 @@ $launcharKey = trim((string)($config['launchar']['app_key'] ?? ''));
     <!--<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>-->
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/css/index.css">
-    <link rel="stylesheet" href="/css/ARSimulation.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="/third_party/simple-keyboard/index.css">
+    <link rel="stylesheet" href="/css/ARSimulation.css?v=<?php echo filemtime(__DIR__ . '/css/ARSimulation.css'); ?>">
 
 <?php if ($launcharKey !== ''): ?>
     <!-- Launchar: third-party WebXR runtime for iOS (https://launchar.app).
@@ -27,8 +27,8 @@ $launcharKey = trim((string)($config['launchar']['app_key'] ?? ''));
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
-    <!-- Virtual keyboard library -->
-    <script src="https://cdn.jsdelivr.net/npm/simple-keyboard@latest/build/index.js"></script>
+    <!-- Virtual keyboard library (vendored, see third_party/simple-keyboard) -->
+    <script src="/third_party/simple-keyboard/index.js"></script>
 
     <?php include __DIR__ . '/templates/navbar.php'; ?>
     
@@ -109,6 +109,6 @@ $launcharKey = trim((string)($config['launchar']['app_key'] ?? ''));
         })();
     </script>
      <!-- atribute module is set becauce main contains imported functions and classes -->
-    <script type="module" crossorigin src="/js/AR_simulation/main.js?v=<?php echo time(); ?>"></script>
+    <script type="module" crossorigin src="/js/AR_simulation/main.js?v=<?php echo filemtime(__DIR__ . '/js/AR_simulation/main.js'); ?>"></script>
 </body>
 </html>

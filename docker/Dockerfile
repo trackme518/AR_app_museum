@@ -43,6 +43,9 @@ COPY --from=dependencies /build/app/vendor /var/www/html/vendor
 COPY --from=dependencies /build/rag-parser/vendor /var/www/html/rag-parser/vendor
 COPY --from=browser-dependencies /build/app/node_modules/i18next/i18next.min.js /var/www/html/third_party/i18next/i18next.min.js
 COPY --from=browser-dependencies /build/app/node_modules/i18next/LICENSE /var/www/html/third_party/i18next/LICENSE
+COPY --from=browser-dependencies /build/app/node_modules/simple-keyboard/build/index.js /var/www/html/third_party/simple-keyboard/index.js
+COPY --from=browser-dependencies /build/app/node_modules/simple-keyboard/build/css/index.css /var/www/html/third_party/simple-keyboard/index.css
+COPY --from=browser-dependencies /build/app/node_modules/simple-keyboard/LICENSE /var/www/html/third_party/simple-keyboard/LICENSE
 
 RUN mkdir -p /var/www/html/uploads/knowledge \
         /var/www/html/uploads/media \

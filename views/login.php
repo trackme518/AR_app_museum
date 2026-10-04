@@ -21,7 +21,7 @@ $page_title_key = 'nav.login';
     <main>
         <h1 data-i18n="nav.login">Log in</h1>
         
-        <form id="login-form">
+        <form id="login-form" method="post">
             <label for="username"><span data-i18n="auth.username">Username</span>:</label>
             <input type="text" id="username" name="username" 
                     data-i18n-placeholder="auth.enterUsername" placeholder="Enter your username"
@@ -37,7 +37,10 @@ $page_title_key = 'nav.login';
             <p id="error-message" class="error-msg hidden"></p>
             <br>
             
-            <button type="submit" data-i18n="nav.login">Log in</button>
+            <!-- Disabled until validateLogin.js attaches the submit handler,
+                 so credentials can never be submitted before the handler
+                 exists (which would fall back to a native form submit). -->
+            <button type="submit" id="login-submit" data-i18n="nav.login" disabled>Log in</button>
         </form>
     </main>
 

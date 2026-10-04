@@ -41,6 +41,12 @@
             header.classList.add('collapsible');
             return;
         }
+        // Measure in the horizontal layout: while .collapsible is applied,
+        // the menu is a full-width absolute dropdown, so every item would
+        // measure as wide as the header and the menu could never expand
+        // back. Removing the class before measuring is invisible (no paint
+        // happens between the reflow and re-applying it).
+        header.classList.remove('collapsible');
         const available = navBar.clientWidth;
         let needed = 0;
         Array.from(navMenu.children).forEach((li) => {
@@ -48,7 +54,6 @@
         });
         needed += (navMenu.children.length - 1) * 30; // gap
         if (needed > available) header.classList.add('collapsible');
-        else header.classList.remove('collapsible');
     };
 
     window.addEventListener('resize', () => {

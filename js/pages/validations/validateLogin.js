@@ -2,11 +2,12 @@ import { ApiService } from '../../ApiService.js';
 import { t } from '../../localization.js';
 
 
-document.addEventListener('DOMContentLoaded', () => {
+function initLoginForm() {
     let username = document.getElementById("username");
     let password = document.getElementById("password");
     let form = document.getElementById("login-form");
     let errorMsg = document.getElementById("error-message");
+    let submitButton = document.getElementById("login-submit");
 
     // Retrieve CSRF token from the meta tag
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
@@ -88,4 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
     username.addEventListener("blur", checkUsername);
     password.addEventListener("blur", checkPassword);
     form.addEventListener("submit", sendForm);
-})
+
+    // Enable the button only now that the submit handler is attached.
+    if (submitButton) {
+        submitButton.disabled = false;
+    }
+}
+
+// Module scripts are deferred: the DOM is fully parsed by the time this
+// runs (even though localization.js awaited its translation fetch), so the
+// form can be initialized directly — no DOMContentLoaded waiting.
+initLoginForm();

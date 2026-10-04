@@ -1,19 +1,9 @@
-:root {
-    --bg-color: #0f172a;
-    --text-color: #f8fafc;
-    --primary-color: #0ea5e9;
-    --danger-color: #ef4444;
-    --glass-bg: rgba(15, 23, 42, 0.6);
-    --item-hover-bg: rgba(30, 41, 59, 0.8);
-    --transition: 0.3s ease;
-}
+/* Shared design tokens (colors, fonts, body background) come from
+   css/base.css, loaded by templates/head_content.php on every page.
+   This file only contains list-page-specific styling. */
 
-body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    padding-bottom: 50px;
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
 main {
@@ -100,7 +90,7 @@ a.button:hover {
 .char-item:hover,
 .list-item:hover,
 .program-item:hover {
-    background: var(--item-hover-bg);
+    background: rgba(30, 41, 59, 0.8);
     border-color: var(--primary-color);
     transform: translateX(5px);
     box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.3);

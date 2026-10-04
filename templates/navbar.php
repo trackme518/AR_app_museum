@@ -92,5 +92,44 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
             </li>
         </ul>
     </nav>
+
+    <script>
+        // Pre-paint translation: applies the cached locale's strings to the
+        // navigation synchronously during parsing, so labels never flash in
+        // the default language (and never resize/reposition the nav) on
+        // navigation. The cache is written by js/localization.js; the full
+        // i18next setup re-applies and verifies everything later.
+        (function () {
+            try {
+                var locale = window.localStorage.getItem('ar_museum_locale')
+                    || (window.AR_MUSEUM_LANGUAGE_CONFIG && window.AR_MUSEUM_LANGUAGE_CONFIG.defaultLocale);
+                var raw = window.localStorage.getItem('ar_museum_i18n_cache');
+                if (raw) {
+                    var strings = (JSON.parse(raw)[locale] || {}).translation || {};
+                    var nodes = document.querySelectorAll('[data-i18n]');
+                    for (var i = 0; i < nodes.length; i++) {
+                        var text = strings[nodes[i].getAttribute('data-i18n')];
+                        if (typeof text === 'string') nodes[i].textContent = text;
+                    }
+                }
+                // Fill the language picker's value text immediately: the
+                // <select> is server-rendered with every locale name, so no
+                // cache or network is needed and the navbar keeps a stable
+                // width from the first paint (no late re-centering when
+                // translatePage() would otherwise fill it).
+                var select = document.getElementById('global-language-select');
+                if (select && locale) select.value = locale;
+                if (select) {
+                    var picker = select.closest('.lang-picker');
+                    var valueEl = picker ? picker.querySelector('.lang-picker-value') : null;
+                    var option = select.selectedOptions && select.selectedOptions[0];
+                    if (valueEl && option) valueEl.textContent = option.textContent;
+                }
+            } catch (error) {
+                // Cache unavailable or corrupted: fall back to the async
+                // translation in localization.js.
+            }
+        })();
+    </script>
     <script src="/js/navbar.js"></script>
 </header>
