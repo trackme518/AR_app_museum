@@ -1,0 +1,89 @@
+name: ar_museum
+
+# Hosting-panel variant (e.g. Hostinger Docker Manager, manual deploy).
+# Same stack as docker/compose.yaml, but self-contained for panel deployment:
+# - no build context (image pulled from GHCR)
+# - no env_file: the panel supplies the variables via its .env/secrets field
+#   (Compose interpolation, same variable names as the repo's .env.example);
+#   the app service's environment block maps them into the container
+# - requires the external network, created once via SSH:
+#     docker network create proxy
+# Routing/TLS is provided by an existing label-driven Traefik on the same
+# host; the label hostname is interpolated from APP_HOSTNAME.
+
+services:
+  app:
+    image: ghcr.io/trackme518/ar_museum-app:latest
+    environment:
+      SHOW_ERRORS: "${SHOW_ERRORS}"
+      DEFAULT_LOCALE: "${DEFAULT_LOCALE}"
+      DEFAULT_LANGUAGE: "${DEFAULT_LANGUAGE}"
+      SUPPORTED_LOCALES: "${SUPPORTED_LOCALES}"
+      FORCE_TRANSLATION: "${FORCE_TRANSLATION}"
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT}"
+      MARIADB_DATABASE: "${MARIADB_DATABASE}"
+      MARIADB_USER: "${MARIADB_USER}"
+      MARIADB_PASSWORD: "${MARIADB_PASSWORD}"
+      ADMIN_USERNAME: "${ADMIN_USERNAME}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      AI_BASE_URL: "${AI_BASE_URL}"
+      AI_API_TOKEN: "${AI_API_TOKEN}"
+      AI_CHAT_MODEL: "${AI_CHAT_MODEL}"
+      RAG_ENABLED: "${RAG_ENABLED}"
+      RAG_CHUNK_SIZE: "${RAG_CHUNK_SIZE}"
+      RAG_CHUNK_OVERLAP: "${RAG_CHUNK_OVERLAP}"
+      RAG_RETRIEVAL_LIMIT: "${RAG_RETRIEVAL_LIMIT}"
+      RAG_MAX_UPLOAD_BYTES: "${RAG_MAX_UPLOAD_BYTES}"
+      EMBEDDING_BASE_URL: "${EMBEDDING_BASE_URL}"
+      EMBEDDING_API_TOKEN: "${EMBEDDING_API_TOKEN}"
+      EMBEDDING_MODEL: "${EMBEDDING_MODEL}"
+      EMBEDDING_DIMENSION: "${EMBEDDING_DIMENSION}"
+      LAUNCHAR_APP_KEY: "${LAUNCHAR_APP_KEY}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ar-museum.rule=Host(`${APP_HOSTNAME}`)"
+      - "traefik.http.routers.ar-museum.entrypoints=websecure"
+      - "traefik.http.routers.ar-museum.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ar-museum.loadbalancer.server.port=80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/var/www/html/uploads
+    networks:
+      - proxy
+      - backend
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:11.8
+    environment:
+      MARIADB_DATABASE: "${MARIADB_DATABASE}"
+      MARIADB_USER: "${MARIADB_USER}"
+      MARIADB_PASSWORD: "${MARIADB_PASSWORD}"
+      MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+      MARIADB_AUTO_UPGRADE: "1"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:
+  uploads_data:
+
+networks:
+  proxy:
+    external: true
+  backend:
+    internal: true

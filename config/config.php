@@ -22,6 +22,11 @@ $apiUrl = static function (string $baseUrl, string $path): string {
 $aiBaseUrl = (string)$env('AI_BASE_URL', 'https://api.openai.com');
 $embeddingBaseUrl = (string)$env('EMBEDDING_BASE_URL', $aiBaseUrl);
 $aiToken = (string)$env('AI_API_TOKEN', '');
+$dbPassword = getenv('MARIADB_PASSWORD');
+if ($dbPassword === false || $dbPassword === '') {
+    throw new RuntimeException('MARIADB_PASSWORD is not set.');
+}
+
 $defaultLocales = [
     'de-DE' => 'Deutsch',
     'en-US' => 'English',
@@ -52,9 +57,9 @@ return [
         'type' => 'mariadb',
         'host' => (string)$env('DB_HOST', 'mariadb'),
         'port' => (int)$env('DB_PORT', 3306),
-        'name' => (string)$env('DB_NAME', $env('MARIADB_DATABASE', 'ar_museum')),
-        'user' => (string)$env('DB_USER', $env('MARIADB_USER', 'ar_museum')),
-        'pass' => (string)$env('DB_PASSWORD', $env('MARIADB_PASSWORD', '')),
+        'name' => (string)$env('MARIADB_DATABASE', 'ar_museum'),
+        'user' => (string)$env('MARIADB_USER', 'ar_museum'),
+        'pass' => $dbPassword,
         'charset' => 'utf8mb4',
         'admin_username' => (string)$env('ADMIN_USERNAME', 'admin'),
         'admin_password' => (string)$env('ADMIN_PASSWORD', ''),
