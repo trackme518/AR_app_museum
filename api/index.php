@@ -38,6 +38,7 @@ $containerBuilder->addDefinitions([
     \App\Service\KnowledgeDocumentService::class => \DI\autowire()->constructorParameter('config', $config),
     \App\Service\GreetingTranslationService::class => \DI\autowire()->constructorParameter('config', $config),
     \App\Service\AiService::class => \DI\autowire()->constructorParameter('config', $config),
+    \App\Service\LoginThrottle::class => \DI\autowire()->constructorParameter('config', $config),
 ]);
 
 $container = $containerBuilder->build();

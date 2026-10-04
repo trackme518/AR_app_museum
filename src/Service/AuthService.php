@@ -7,6 +7,7 @@ use App\Repository\UserRepository;
 use App\Domain\Auth\LoginDTO;
 use App\Domain\Auth\UpdateProfileDTO;
 use App\Exception\ValidationException;
+use App\Service\LoginThrottle;
 
 /**
  * Provides business logic for authentication and user account operations.
@@ -15,9 +16,12 @@ class AuthService
 {
     /**
      * @param UserRepository $userRepository Data access object for users
+     * @param LoginThrottle $throttle Per-IP failed-login throttling
      */
-    public function __construct(private UserRepository $userRepository)
-    {
+    public function __construct(
+        private UserRepository $userRepository,
+        private LoginThrottle $throttle
+    ) {
     }
 
     /**
@@ -25,15 +29,27 @@ class AuthService
      *
      * @param LoginDTO $dto Data transfer object containing login credentials
      * @return AuthResultDTO User data including ID, username, role, and permissions
-     * @throws ValidationException If authentication fails
+     * @throws ValidationException If authentication fails or the IP is locked out
      */
     public function login(LoginDTO $dto): AuthResultDTO
     {
+        $ip = LoginThrottle::clientIp();
+        if ($this->throttle->isLocked($ip)) {
+            $minutes = (int)ceil($this->throttle->getLockedSeconds($ip) / 60);
+            throw new ValidationException(
+                "Too many failed login attempts. Try again in {$minutes} minute(s).",
+                429
+            );
+        }
+
         $user = $this->userRepository->findByUsername($dto->username);
 
         if (!$user || !password_verify($dto->password, $user->passwordHash)) {
+            $this->throttle->recordFailure($ip);
             throw new ValidationException("Incorrect username or password.", 401);
         }
+
+        $this->throttle->clear($ip);
 
         // rehash password if hash algorithm gets changed
         if (password_needs_rehash($user->passwordHash, PASSWORD_DEFAULT)) {

@@ -53,6 +53,11 @@ if (!isset($locales[$defaultLocale])) {
 
 return [
     'show_errors' => $envBool('SHOW_ERRORS', false),
+    'auth' => [
+        // Per-IP failed-login lockout (see src/Service/LoginThrottle.php).
+        'lockout_max_attempts' => max(1, (int)$env('LOCKOUT_MAX_ATTEMPTS', 3)),
+        'lockout_time_minutes' => max(1, (int)$env('LOCKOUT_TIME', 15)),
+    ],
     'db' => [
         'type' => 'mariadb',
         'host' => (string)$env('DB_HOST', 'mariadb'),

@@ -114,6 +114,14 @@ CREATE TABLE knowledge_chunks (
     VECTOR INDEX (embedding) DISTANCE=cosine
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Per-IP failed-login throttling (src/Service/LoginThrottle.php).
+CREATE TABLE login_throttle (
+    ip VARCHAR(45) NOT NULL PRIMARY KEY,
+    failed_attempts INT UNSIGNED NOT NULL DEFAULT 0,
+    locked_until DATETIME NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- inserting data
 INSERT INTO roles (id, role_name) VALUES (1, 'admin'), (2, 'user'), (3, 'editor');
 
