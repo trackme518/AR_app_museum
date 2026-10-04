@@ -31,6 +31,10 @@ export class ChatController {
         this.isTtsEnabled = false;
 
         this.activeCharacter = null;
+        // CSRF token (meta tag, issued with the page's session) required by
+        // the /ai/chat gate.
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        this.csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = SpeechRecognition ? new SpeechRecognition() : null;
         this.isListening = false;
@@ -254,11 +258,12 @@ export class ChatController {
 
         try {
             const result = await this.apiService.sendChatPrompt(
-                prompt, 
-                this.activeCharacter.description || "", 
+                prompt,
+                this.activeCharacter.description || "",
                 this.activeCharacter.sessionId,
                 getCurrentLocale(),
-                this.activeCharacter.exhibitionId || null
+                this.activeCharacter.exhibitionId || null,
+                this.csrfToken
             );
             
             if (result.sessionId) {

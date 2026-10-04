@@ -87,28 +87,28 @@ $app->group('/users', function (\Slim\Routing\RouteCollectorProxy $group) use ($
     $group->get('/{id:[0-9]+}', [\App\Controller\UserController::class, 'getById']);
     $group->post('', [\App\Controller\UserController::class, 'createOrUpdate'])->add($maintainUsers);
     $group->delete('/{id:[0-9]+}', [\App\Controller\UserController::class, 'delete'])->add($maintainUsers);
-})->add($requireCsrf);
+})->add($requireCsrf)->add($requireLogin);
 
 $app->group('/characters', function (\Slim\Routing\RouteCollectorProxy $group) use ($editCharacters) {
     $group->get('', [\App\Controller\CharacterController::class, 'getAll']);
     $group->get('/{id:[0-9]+}', [\App\Controller\CharacterController::class, 'getById']);
     $group->post('', [\App\Controller\CharacterController::class, 'createOrUpdate'])->add($editCharacters);
     $group->delete('/{id:[0-9]+}', [\App\Controller\CharacterController::class, 'delete'])->add($editCharacters);
-})->add($requireCsrf);
+})->add($requireCsrf)->add($requireLogin);
 
 $app->group('/scenarios', function (\Slim\Routing\RouteCollectorProxy $group) use ($editScenarios) {
     $group->get('', [\App\Controller\ScenarioController::class, 'getAll']);
     $group->get('/{id:[0-9]+}', [\App\Controller\ScenarioController::class, 'getById']);
     $group->post('', [\App\Controller\ScenarioController::class, 'createOrUpdate'])->add($editScenarios);
     $group->delete('/{id:[0-9]+}', [\App\Controller\ScenarioController::class, 'delete'])->add($editScenarios);
-})->add($requireCsrf);
+})->add($requireCsrf)->add($requireLogin);
 
 $app->group('/programs', function (\Slim\Routing\RouteCollectorProxy $group) use ($editPrograms) {
     $group->get('', [\App\Controller\ProgramController::class, 'getAll']);
     $group->get('/{id:[0-9]+}', [\App\Controller\ProgramController::class, 'getById']);
     $group->post('', [\App\Controller\ProgramController::class, 'createOrUpdate'])->add($editPrograms);
     $group->delete('/{id:[0-9]+}', [\App\Controller\ProgramController::class, 'delete'])->add($editPrograms);
-})->add($requireCsrf);
+})->add($requireCsrf)->add($requireLogin);
 
 $app->group('/knowledge-documents', function (\Slim\Routing\RouteCollectorProxy $group) use ($editCharacters) {
     $group->get('', [\App\Controller\KnowledgeDocumentController::class, 'getAll']);
@@ -116,8 +116,11 @@ $app->group('/knowledge-documents', function (\Slim\Routing\RouteCollectorProxy 
     $group->delete('/{id:[0-9]+}', [\App\Controller\KnowledgeDocumentController::class, 'delete']);
 })->add($editCharacters)->add($requireCsrf)->add($requireLogin);
 
+// Chat stays anonymous (museum visitors) but is gated by the session CSRF
+// token issued on any page load, so it cannot be called by scripts that
+// never visited the site.
 $app->group('/ai', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/chat', [\App\Controller\AiController::class, 'chat']);
-});
+})->add($requireCsrf);
 
 $app->run();

@@ -307,10 +307,10 @@ export class ApiService {
         });
     }
 
-    async sendChatPrompt(prompt, systemPrompt, sessionId = null, locale = '', exhibitionId = null) {
+    async sendChatPrompt(prompt, systemPrompt, sessionId = null, locale = '', exhibitionId = null, csrfToken = '') {
         const response = await fetch(`${this.baseUrl}/ai/chat`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
             body: JSON.stringify({
                 message: prompt,
                 systemPrompt: systemPrompt,
