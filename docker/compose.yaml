@@ -13,6 +13,15 @@ services:
       dockerfile: docker/Dockerfile
     env_file:
       - ../.env
+    labels:
+      # Routing for an external label-driven Traefik (providers.docker=true,
+      # exposedbydefault=false, e.g. deployed via a hosting panel). Ignored by
+      # this repo's own edge stack (docker/edge), which uses a file provider.
+      - "traefik.enable=true"
+      - "traefik.http.routers.ar-museum.rule=Host(`${APP_HOSTNAME}`)"
+      - "traefik.http.routers.ar-museum.entrypoints=websecure"
+      - "traefik.http.routers.ar-museum.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ar-museum.loadbalancer.server.port=80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

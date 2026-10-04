@@ -22,7 +22,7 @@ Start the application:
 ./build.sh
 ```
 
-`build.sh` first generates any missing UI translations and then builds and starts the application stack (app + MariaDB). TLS runs in a separate Traefik edge stack; see [docker/README.md](docker/README.md) for the two-stack setup and HTTPS deployment.
+`build.sh` first generates any missing UI translations and then builds and starts the application stack (app + MariaDB). TLS runs in a separate Traefik edge stack; see [docker/README.md](docker/README.md) for the two-stack setup and HTTPS deployment, or the label-mode variant there if the server already runs its own Traefik.
 
 ## HTTPS
 

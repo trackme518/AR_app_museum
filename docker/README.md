@@ -5,13 +5,15 @@ network:
 
 - **App stack** (`docker/compose.yaml`): Apache with PHP 8.3 and MariaDB 11.8
   LTS. MariaDB stores both application data and native RAG vectors; no
-  additional vector server is required.
+  additional vector server is required. The app service also carries Traefik
+  labels, so it can be routed by an already-running, label-driven Traefik
+  (see "Routing via an existing Traefik" below).
 - **Edge stack** (`docker/edge/compose.yaml`): Traefik, which terminates TLS
   and routes traffic to the app container.
 
 ```text
 internet / LAN ──> traefik :80/:443 ──https──> app :80 (internal network)
-                                   └─ acme DNS-01 ──> your DNS provider
+                                    └─ acme DNS-01 ──> your DNS provider
 ```
 
 ## One-time network setup
@@ -96,6 +98,38 @@ On the first request Traefik requests the certificate and shows its own
 self-signed fallback until issuance completes (usually under a minute). Only
 Traefik publishes host ports; the app and MariaDB stay on internal networks.
 HTTP is permanently redirected to HTTPS.
+
+## Routing via an existing Traefik (label mode)
+
+If the server already runs a **label-driven Traefik** — e.g. deployed through
+a hosting panel, configured with `--providers.docker=true` and
+`--providers.docker.exposedbydefault=false` — the app can use it instead of
+the edge stack above. The `app` service in `docker/compose.yaml` carries the
+necessary labels:
+
+```yaml
+labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.ar-museum.rule=Host(`${APP_HOSTNAME}`)"
+  - "traefik.http.routers.ar-museum.entrypoints=websecure"
+  - "traefik.http.routers.ar-museum.tls.certresolver=letsencrypt"
+  - "traefik.http.services.ar-museum.loadbalancer.server.port=80"
+```
+
+In this mode:
+
+- **Do not deploy `docker/edge/compose.yaml`** on that server — one Traefik
+  must own ports 80/443.
+- The existing Traefik must expose `web`/`websecure` entrypoints and a
+  certificate resolver named `letsencrypt` (HTTP-01 is fine on a public VPS;
+  point the `APP_HOSTNAME` A record at the server's public IP).
+- The Traefik must be able to reach the app container's IP: host-network
+  Traefik can reach any Docker network; bridge-attached Traefik must also be
+  connected to the shared `proxy` network.
+- The labels are ignored by this repo's own edge stack (it uses a file
+  provider), so both deployment modes work from the same compose file.
+- DNS-01/`LEGODNS_*` variables are not used in this mode; TLS is managed by
+  the existing Traefik.
 
 ## Renewals, rate limits, and volumes
 
