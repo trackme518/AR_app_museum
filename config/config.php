@@ -70,7 +70,7 @@ return [
         'chunk_overlap' => max(0, (int)$env('RAG_CHUNK_OVERLAP', 50)),
         'retrieval_limit' => max(1, (int)$env('RAG_RETRIEVAL_LIMIT', 5)),
         'embedding_url' => $apiUrl($embeddingBaseUrl, '/embeddings'),
-        'embedding_token' => $aiToken,
+        'embedding_token' => (string)$env('EMBEDDING_API_TOKEN', $aiToken),
         'embedding_model' => (string)$env('EMBEDDING_MODEL', 'text-embedding-embedding-gemma-300m'),
         'embedding_dimension' => max(1, (int)$env('EMBEDDING_DIMENSION', 768)),
         'max_upload_bytes' => max(1024, (int)$env('RAG_MAX_UPLOAD_BYTES', 15728640)),

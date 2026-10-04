@@ -20,6 +20,18 @@ internet / LAN ──> traefik :80/:443 ──https──> app :80 (internal net
 docker network create proxy
 ```
 
+## Generating strong passwords
+
+The `MARIADB_PASSWORD` (the app account the PHP application connects with) and `MARIADB_ROOT_PASSWORD` (the database
+superuser) values in `.env` must be strong. Generate them with:
+
+```bash
+openssl rand -hex 24
+```
+
+(`openssl rand -base64 24` also works; use `-hex` if you want to avoid `/` and
+`+` characters in the value.)
+
 ## HTTPS via Let's Encrypt DNS-01
 
 Certificates are issued for `APP_HOSTNAME` using the **DNS-01 ACME challenge**:
