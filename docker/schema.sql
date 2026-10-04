@@ -99,14 +99,15 @@ CREATE TABLE knowledge_documents (
     CONSTRAINT fk_knowledge_exhibition FOREIGN KEY (exhibition_id) REFERENCES programs(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- EmbeddingGemma produces 768-dimensional vectors. If the embedding model is
--- changed, migrate this column and update EMBEDDING_DIMENSION in .env.
+-- The embedding vector dimension is substituted from EMBEDDING_DIMENSION
+-- (config.php) when the schema is applied to an empty database; it must
+-- match the configured embedding model.
 CREATE TABLE knowledge_chunks (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     document_id BIGINT UNSIGNED NOT NULL,
     chunk_index INT UNSIGNED NOT NULL,
     content TEXT NOT NULL,
-    embedding VECTOR(768) NOT NULL,
+    embedding VECTOR({{EMBEDDING_DIMENSION}}) NOT NULL,
     UNIQUE KEY unique_document_chunk (document_id, chunk_index),
     CONSTRAINT fk_chunk_document FOREIGN KEY (document_id)
         REFERENCES knowledge_documents(id) ON DELETE CASCADE,

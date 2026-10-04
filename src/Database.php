@@ -81,7 +81,7 @@ class Database
                 $dbConfig['charset']
             );
             self::$pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['pass'], $options);
-            self::provisionSchema(self::$pdo);
+            self::provisionSchema(self::$pdo, $config);
             self::seedInitialAdmin(self::$pdo, $dbConfig);
 
             return self::$pdo;
@@ -96,8 +96,12 @@ class Database
      * Creates the initial schema when the database contains no tables.
      * Runs once per connection and is guarded by a server-side named lock,
      * so concurrent first requests cannot race the provisioning.
+     *
+     * The schema's embedding vector dimension ({{EMBEDDING_DIMENSION}}) is
+     * substituted from the application configuration, which reads the
+     * EMBEDDING_DIMENSION environment variable (getenv, then .env file).
      */
-    private static function provisionSchema(PDO $pdo): void
+    private static function provisionSchema(PDO $pdo, array $config): void
     {
         $locked = (int)$pdo->query("SELECT COALESCE(GET_LOCK('ar_museum_schema', 60), 0)")->fetchColumn() === 1;
         if (!$locked) {
@@ -113,15 +117,25 @@ class Database
                 return;
             }
 
+            $dimension = (int)($config['rag']['embedding_dimension'] ?? 0);
+            if ($dimension < 1) {
+                throw new InvalidArgumentException('EMBEDDING_DIMENSION must be a positive integer.');
+            }
+
             $schemaFile = dirname(__DIR__) . '/docker/schema.sql';
             $sql = @file_get_contents($schemaFile);
             if ($sql === false) {
                 throw new RuntimeException("Schema file is missing: {$schemaFile}");
             }
+            if (!str_contains($sql, '{{EMBEDDING_DIMENSION}}')) {
+                throw new RuntimeException('Schema file is missing the {{EMBEDDING_DIMENSION}} placeholder.');
+            }
+            $sql = str_replace('{{EMBEDDING_DIMENSION}}', (string)$dimension, $sql);
+
             foreach (self::splitStatements($sql) as $statement) {
                 $pdo->exec($statement);
             }
-            error_log('[schema] Empty database detected; initial schema created.');
+            error_log("[schema] Empty database detected; initial schema created (vector dimension {$dimension}).");
         } finally {
             $pdo->query("SELECT RELEASE_LOCK('ar_museum_schema')");
         }
