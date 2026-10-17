@@ -104,6 +104,10 @@ class CharacterService
             }
         }
 
+        if ($this->repository->isReferencedByScenario($id)) {
+            throw new ValidationException("This character is used in a version and cannot be deleted.", 400);
+        }
+
         try {
             $this->repository->delete($id);
 

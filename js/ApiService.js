@@ -112,6 +112,31 @@ export class ApiService {
     }
 
     /**
+     * Fetches application settings.
+     * @returns {Promise<Object>} Settings object.
+     */
+    async getSettings() {
+        return this.fetchJson('/settings');
+    }
+
+    /**
+     * Updates application settings.
+     * @param {Object} settings - Settings payload.
+     * @param {string} csrfToken - Security token.
+     * @returns {Promise<Object>} Success response.
+     */
+    async updateSettings(settings, csrfToken) {
+        return this.fetchJson('/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify(settings)
+        });
+    }
+
+    /**
      * Fetches details of a specific user.
      * @param {number|string} id - The user ID.
      * @returns {Promise<Object>} User details object.

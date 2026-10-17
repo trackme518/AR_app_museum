@@ -1,6 +1,14 @@
 <?php
 require_once __DIR__ . '/backend/init.php';
+require_once __DIR__ . '/vendor/autoload.php';
 $config = require __DIR__ . '/config/config.php';
+$settings = new \App\Service\SettingService(
+    new \App\Repository\SettingRepository(\App\Database::getConnection($config))
+);
+if (empty($_SESSION['user_id']) && $settings->isPublicArLoginRequired()) {
+    header('Location: /views/login.php');
+    exit;
+}
 $locales = $config['localization']['locales'];
 $defaultLocale = $config['localization']['default_locale'];
 $page_title = "AR Simulation";

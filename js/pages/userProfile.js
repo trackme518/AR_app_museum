@@ -5,6 +5,12 @@ import { onDomReady } from '../domReady.js';
 onDomReady(() => {
     const listContainer = document.getElementById('user-list');
     const errorMsg = document.getElementById('error-message');
+    const settingsForm = document.getElementById('public-ar-settings-form');
+    const settingsCheckbox = document.getElementById('public-ar-requires-login');
+    const settingsSubmit = document.getElementById('settings-submit');
+    const settingsStatus = document.getElementById('settings-status');
+    const settingsError = document.getElementById('settings-error');
+    let settingsLoaded = false;
 
     // Retrieve CSRF token from the meta tag
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
@@ -34,6 +40,56 @@ onDomReady(() => {
     function clearError() {
         errorMsg.textContent = '';
         errorMsg.classList.add('hidden');
+    }
+
+    /**
+     * Displays a settings message.
+     */
+    function showSettingsMessage(element, message) {
+        settingsStatus.classList.add('hidden');
+        settingsError.classList.add('hidden');
+        element.textContent = message;
+        element.classList.remove('hidden');
+    }
+
+    /**
+     * Loads the public AR access setting.
+     */
+    async function loadSettings() {
+        try {
+            const settings = await apiService.getSettings();
+            settingsCheckbox.checked = settings.public_ar_requires_login === true;
+            settingsCheckbox.disabled = false;
+            settingsSubmit.disabled = false;
+            settingsLoaded = true;
+        } catch (error) {
+            console.error('Settings load error:', error);
+            showSettingsMessage(settingsError, error.message || t('common.apiUnavailable'));
+        }
+    }
+
+    /**
+     * Saves the public AR access setting.
+     */
+    async function handleSettingsSubmit(e) {
+        e.preventDefault();
+        if (!settingsLoaded) return;
+
+        settingsStatus.classList.add('hidden');
+        settingsError.classList.add('hidden');
+
+        settingsSubmit.disabled = true;
+        try {
+            await apiService.updateSettings({
+                public_ar_requires_login: settingsCheckbox.checked
+            }, apiCsrfToken);
+            showSettingsMessage(settingsStatus, t('settings.saved'));
+        } catch (error) {
+            console.error('Settings save error:', error);
+            showSettingsMessage(settingsError, error.message || t('settings.saveFailed'));
+        } finally {
+            settingsSubmit.disabled = false;
+        }
     }
 
     /**
@@ -120,5 +176,11 @@ onDomReady(() => {
     }
 
     listContainer.addEventListener('click', handleDeleteClick);
+
+    if (settingsForm && settingsCheckbox) {
+        settingsForm.addEventListener('submit', handleSettingsSubmit);
+        loadSettings();
+    }
+
     loadUsers();
 });

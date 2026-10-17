@@ -175,6 +175,17 @@ class ScenarioRepository
     }
 
     /**
+     * Checks whether a scenario is linked to any program.
+     */
+    public function isReferencedByProgram(int $id): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM program_scenario WHERE scenario_id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    /**
      * Deletes a scenario and its associated character links.
      *
      * @param int $id The scenario ID

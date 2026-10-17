@@ -65,11 +65,15 @@ $app->addErrorMiddleware($config['show_errors'], true, true);
 
 // custom middlewares
 $editCharacters = requireAnyApiPermission(['editCharacters', 'editOwnCharacters']);
+$editKnowledgeBase = requireApiPermission('editCharacters');
 $editScenarios = requireAnyApiPermission(['editScenarios', 'editOwnScenarios']);
 $editPrograms = requireAnyApiPermission(['editPrograms', 'editOwnPrograms']);
 $maintainUsers = requireApiPermission('maintainUsers');
 $requireCsrf = requireCsrfApi();
 $requireLogin = requireLoginApi();
+$publicArAccess = requireLoginIf(
+    static fn(): bool => $container->get(\App\Service\SettingService::class)->isPublicArLoginRequired()
+);
 
 /**
  * =================
@@ -81,47 +85,56 @@ $app->post('/updateProfile', [\App\Controller\AuthController::class, 'updateProf
     ->add($requireCsrf)
     ->add($requireLogin);
 
-$app->get('/roles', [\App\Controller\RoleController::class, 'getAll'])->add($requireLogin);
+$app->get('/roles', [\App\Controller\RoleController::class, 'getAll'])
+    ->add($maintainUsers)
+    ->add($requireLogin);
 
-$app->group('/users', function (\Slim\Routing\RouteCollectorProxy $group) use ($maintainUsers) {
+$app->get('/settings', [\App\Controller\SettingController::class, 'get'])
+    ->add($maintainUsers)
+    ->add($requireLogin);
+$app->post('/settings', [\App\Controller\SettingController::class, 'update'])
+    ->add($maintainUsers)
+    ->add($requireCsrf)
+    ->add($requireLogin);
+
+$app->group('/users', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('', [\App\Controller\UserController::class, 'getAll']);
     $group->get('/{id:[0-9]+}', [\App\Controller\UserController::class, 'getById']);
-    $group->post('', [\App\Controller\UserController::class, 'createOrUpdate'])->add($maintainUsers);
-    $group->delete('/{id:[0-9]+}', [\App\Controller\UserController::class, 'delete'])->add($maintainUsers);
-})->add($requireCsrf)->add($requireLogin);
+    $group->post('', [\App\Controller\UserController::class, 'createOrUpdate']);
+    $group->delete('/{id:[0-9]+}', [\App\Controller\UserController::class, 'delete']);
+})->add($maintainUsers)->add($requireCsrf)->add($requireLogin);
 
-$app->group('/characters', function (\Slim\Routing\RouteCollectorProxy $group) use ($editCharacters) {
-    $group->get('', [\App\Controller\CharacterController::class, 'getAll']);
-    $group->get('/{id:[0-9]+}', [\App\Controller\CharacterController::class, 'getById']);
-    $group->post('', [\App\Controller\CharacterController::class, 'createOrUpdate'])->add($editCharacters);
-    $group->delete('/{id:[0-9]+}', [\App\Controller\CharacterController::class, 'delete'])->add($editCharacters);
-})->add($requireCsrf)->add($requireLogin);
+$app->group('/characters', function (\Slim\Routing\RouteCollectorProxy $group) use ($editCharacters, $publicArAccess, $requireLogin) {
+    $group->get('', [\App\Controller\CharacterController::class, 'getAll'])->add($publicArAccess);
+    $group->get('/{id:[0-9]+}', [\App\Controller\CharacterController::class, 'getById'])->add($publicArAccess);
+    $group->post('', [\App\Controller\CharacterController::class, 'createOrUpdate'])->add($editCharacters)->add($requireLogin);
+    $group->delete('/{id:[0-9]+}', [\App\Controller\CharacterController::class, 'delete'])->add($editCharacters)->add($requireLogin);
+})->add($requireCsrf);
 
-$app->group('/scenarios', function (\Slim\Routing\RouteCollectorProxy $group) use ($editScenarios) {
-    $group->get('', [\App\Controller\ScenarioController::class, 'getAll']);
-    $group->get('/{id:[0-9]+}', [\App\Controller\ScenarioController::class, 'getById']);
-    $group->post('', [\App\Controller\ScenarioController::class, 'createOrUpdate'])->add($editScenarios);
-    $group->delete('/{id:[0-9]+}', [\App\Controller\ScenarioController::class, 'delete'])->add($editScenarios);
-})->add($requireCsrf)->add($requireLogin);
+$app->group('/scenarios', function (\Slim\Routing\RouteCollectorProxy $group) use ($editScenarios, $publicArAccess, $requireLogin) {
+    $group->get('', [\App\Controller\ScenarioController::class, 'getAll'])->add($publicArAccess);
+    $group->get('/{id:[0-9]+}', [\App\Controller\ScenarioController::class, 'getById'])->add($publicArAccess);
+    $group->post('', [\App\Controller\ScenarioController::class, 'createOrUpdate'])->add($editScenarios)->add($requireLogin);
+    $group->delete('/{id:[0-9]+}', [\App\Controller\ScenarioController::class, 'delete'])->add($editScenarios)->add($requireLogin);
+})->add($requireCsrf);
 
-$app->group('/programs', function (\Slim\Routing\RouteCollectorProxy $group) use ($editPrograms) {
-    $group->get('', [\App\Controller\ProgramController::class, 'getAll']);
-    $group->get('/{id:[0-9]+}', [\App\Controller\ProgramController::class, 'getById']);
-    $group->post('', [\App\Controller\ProgramController::class, 'createOrUpdate'])->add($editPrograms);
-    $group->delete('/{id:[0-9]+}', [\App\Controller\ProgramController::class, 'delete'])->add($editPrograms);
-})->add($requireCsrf)->add($requireLogin);
+$app->group('/programs', function (\Slim\Routing\RouteCollectorProxy $group) use ($editPrograms, $publicArAccess, $requireLogin) {
+    $group->get('', [\App\Controller\ProgramController::class, 'getAll'])->add($publicArAccess);
+    $group->get('/{id:[0-9]+}', [\App\Controller\ProgramController::class, 'getById'])->add($publicArAccess);
+    $group->post('', [\App\Controller\ProgramController::class, 'createOrUpdate'])->add($editPrograms)->add($requireLogin);
+    $group->delete('/{id:[0-9]+}', [\App\Controller\ProgramController::class, 'delete'])->add($editPrograms)->add($requireLogin);
+})->add($requireCsrf);
 
-$app->group('/knowledge-documents', function (\Slim\Routing\RouteCollectorProxy $group) use ($editCharacters) {
+$app->group('/knowledge-documents', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('', [\App\Controller\KnowledgeDocumentController::class, 'getAll']);
     $group->post('', [\App\Controller\KnowledgeDocumentController::class, 'upload']);
     $group->delete('/{id:[0-9]+}', [\App\Controller\KnowledgeDocumentController::class, 'delete']);
-})->add($editCharacters)->add($requireCsrf)->add($requireLogin);
+})->add($editKnowledgeBase)->add($requireCsrf)->add($requireLogin);
 
-// Chat stays anonymous (museum visitors) but is gated by the session CSRF
-// token issued on any page load, so it cannot be called by scripts that
-// never visited the site.
+// Chat is public only while the public AR login requirement is disabled.
+// It remains gated by the session CSRF token issued on any page load.
 $app->group('/ai', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/chat', [\App\Controller\AiController::class, 'chat']);
-})->add($requireCsrf);
+})->add($requireCsrf)->add($publicArAccess);
 
 $app->run();

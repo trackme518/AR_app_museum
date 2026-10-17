@@ -192,6 +192,10 @@ class ScenarioService
             }
         }
 
+        if ($this->repository->isReferencedByProgram($id)) {
+            throw new ValidationException("This version is used in an exhibition and cannot be deleted.", 400);
+        }
+
         try {
             $this->db->beginTransaction();
             $this->repository->delete($id);
@@ -199,7 +203,7 @@ class ScenarioService
         } catch (PDOException $e) {
             $this->db->rollBack();
             error_log("Chyba při mazání scénáře: " . $e->getMessage());
-            throw new RuntimeException("Database error: The version could not be deleted.", 500);
+            throw new RuntimeException("The version could not be deleted; it may be used in an exhibition.", 400);
         }
     }
 }

@@ -136,6 +136,17 @@ class CharacterRepository
     }
 
     /**
+     * Checks whether a character is linked to any scenario.
+     */
+    public function isReferencedByScenario(int $id): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM scenario_character WHERE character_id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    /**
      * Inserts a new character into the database.
      *
      * @param Character $character The Character entity to insert

@@ -79,6 +79,28 @@ function requireLoginApi()
 }
 
 /**
+ * Middleware that requires login only while the supplied condition is true.
+ *
+ * Used for public AR endpoints: anonymous access is allowed when an
+ * administrator disables the login requirement.
+ *
+ * @param callable $loginRequired Returns true when anonymous access is denied.
+ * @return callable Middleware function for Slim routes.
+ */
+function requireLoginIf(callable $loginRequired)
+{
+    return function ($request, $handler) use ($loginRequired) {
+        if (empty($_SESSION['user_id']) && $loginRequired()) {
+            $response = new \Slim\Psr7\Response();
+            $response->getBody()->write(json_encode(['error' => 'You must be logged in to perform this action.']));
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
+        return $handler->handle($request);
+    };
+}
+
+/**
  * Middleware for checking if user has AT LEAST ONE of the required permissions.
  *
  * @param array $permissionNames Array of permission names to check.

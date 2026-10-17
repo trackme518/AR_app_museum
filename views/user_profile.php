@@ -16,6 +16,7 @@ $can_maintain_users = hasPermission('maintainUsers');
 
 <?php include __DIR__ . '/../templates/head_content.php'; ?>
     <link href="/css/list.css" rel="stylesheet">
+    <link href="/css/form.css" rel="stylesheet">
 </head>
 <body>
     <?php include __DIR__ . '/../templates/navbar.php'; ?>
@@ -30,6 +31,22 @@ $can_maintain_users = hasPermission('maintainUsers');
         </div>
 
         <?php if ($can_maintain_users) : ?>
+            <form id="public-ar-settings-form">
+                <fieldset>
+                    <legend data-i18n="settings.publicAccess">Public AR Access</legend>
+                    <label>
+                        <input type="checkbox" id="public-ar-requires-login" disabled>
+                        <span data-i18n="settings.requireLogin">Require login for public AR</span>
+                    </label>
+                    <p data-i18n="settings.requireLoginHelp">
+                        When enabled, anonymous visitors are redirected to the login page before they can select an exhibition or start AR.
+                    </p>
+                </fieldset>
+                <p id="settings-status" class="success-msg hidden"></p>
+                <p id="settings-error" class="error-msg hidden"></p>
+                <input type="submit" id="settings-submit" data-i18n-value="settings.save" value="Save settings" disabled>
+            </form>
+
             <h2 data-i18n="profile.userManagement">User Management</h2>
             
             <a href="/views/create_user.php" class="button" data-i18n="list.createUser">Create a user</a>

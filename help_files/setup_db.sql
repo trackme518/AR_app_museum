@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS role_permission;
 DROP TABLE IF EXISTS permissions;
 DROP TABLE IF EXISTS roles;
+DROP TABLE IF EXISTS settings;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -38,8 +39,13 @@ CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(16) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role_id INT NOT NULL DEFAULT 2, 
+    role_id INT NOT NULL DEFAULT 4,
     CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE settings (
+    setting_key VARCHAR(64) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE characters (
@@ -83,7 +89,7 @@ CREATE TABLE program_scenario (
     scenario_id INT NOT NULL,
     UNIQUE KEY unique_prog_scen (program_id, scenario_id),
     CONSTRAINT fk_ps_prog FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE,
-    CONSTRAINT fk_ps_scen FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+    CONSTRAINT fk_ps_scen FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE scenario_character (
@@ -92,7 +98,7 @@ CREATE TABLE scenario_character (
     character_id INT NOT NULL,
     UNIQUE KEY unique_scen_char (scenario_id, character_id),
     CONSTRAINT fk_sc_scen FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE,
-    CONSTRAINT fk_sc_char FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+    CONSTRAINT fk_sc_char FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE knowledge_documents (
@@ -125,16 +131,31 @@ CREATE TABLE knowledge_chunks (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- inserting data
-INSERT INTO roles (id, role_name) VALUES (1, 'admin'), (2, 'user'), (3, 'editor');
+INSERT INTO roles (id, role_name) VALUES
+    (1, 'admin'),
+    (2, 'contributor'),
+    (3, 'editor'),
+    (4, 'user');
 
-INSERT INTO permissions (permission_name) VALUES 
-('maintainUsers'), ('editPrograms'), ('editScenarios'), ('editCharacters'), ('view');
+INSERT INTO permissions (permission_name) VALUES
+    ('maintainUsers'),
+    ('editPrograms'),
+    ('editScenarios'),
+    ('editCharacters'),
+    ('editOwnPrograms'),
+    ('editOwnScenarios'),
+    ('editOwnCharacters'),
+    ('view');
 
-INSERT INTO role_permission (role_id, permission_id) 
+INSERT INTO role_permission (role_id, permission_id)
 SELECT 1, id FROM permissions;
 
-INSERT INTO role_permission (role_id, permission_id) 
-SELECT 2, id FROM permissions WHERE permission_name = 'view';
+INSERT INTO role_permission (role_id, permission_id)
+SELECT 2, id FROM permissions
+WHERE permission_name IN ('view', 'editOwnPrograms', 'editOwnScenarios', 'editOwnCharacters');
 
-INSERT INTO role_permission (role_id, permission_id) 
+INSERT INTO role_permission (role_id, permission_id)
 SELECT 3, id FROM permissions WHERE permission_name != 'maintainUsers';
+
+INSERT INTO settings (setting_key, setting_value)
+VALUES ('public_ar_requires_login', '1');
