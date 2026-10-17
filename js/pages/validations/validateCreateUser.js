@@ -1,7 +1,8 @@
 import { ApiService } from '../../ApiService.js';
 import { t } from '../../localization.js';
+import { onDomReady } from '../../domReady.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+onDomReady(async () => {
     const form = document.getElementById('user-form');
     const errorMsg = document.getElementById('error-message');
     // parse user-id to int into decimal system

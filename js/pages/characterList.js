@@ -1,7 +1,8 @@
 import { ApiService } from '../ApiService.js';
 import { t } from '../localization.js';
+import { onDomReady } from '../domReady.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+onDomReady(() => {
     const listContainer = document.getElementById('element-list');
     const errorMsg = document.getElementById('error-message');
 

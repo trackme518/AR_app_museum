@@ -4,8 +4,9 @@ import { ARSpawner } from './ARSpawner.js';
 import { ApiService } from './../ApiService.js';
 import { getCurrentLocale } from './languageConfig.js';
 import { t } from '../localization.js';
+import { onDomReady } from '../domReady.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+onDomReady(async () => {
     const targetUrl = window.location.href;
 
     // A desktop is a launcher surface even if an attached runtime happens to

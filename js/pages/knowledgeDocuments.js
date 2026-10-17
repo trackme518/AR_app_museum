@@ -1,7 +1,8 @@
 import { ApiService } from '../ApiService.js';
 import { t } from '../localization.js';
+import { onDomReady } from '../domReady.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+onDomReady(() => {
     const api = new ApiService();
     const form = document.getElementById('knowledge-upload-form');
     const input = document.getElementById('document');
