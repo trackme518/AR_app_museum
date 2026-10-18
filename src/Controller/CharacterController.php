@@ -81,7 +81,9 @@ class CharacterController extends AbstractController
             videoTalkFile: $files['video_talk'] ?? null,
             videoSpecialFile: $files['video_special'] ?? null,
             markerOrientation: $data['marker_orientation'] ?? 'stand',
-            greenscreen: isset($data['greenscreen']) && $data['greenscreen'] === true
+            greenscreen: isset($data['greenscreen']) && $data['greenscreen'] === true,
+            sourceLocale: isset($data['source_locale']) && is_string($data['source_locale'])
+                ? $data['source_locale'] : null
         );
 
         try {

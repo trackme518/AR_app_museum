@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Database;
 use App\Service\DocumentTextExtractor;
 use App\Service\EmbeddingClient;
+use App\Service\GreetingTranslationService;
 use App\Service\RecursiveCharacterTextSplitter;
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -78,6 +79,8 @@ try {
     );
     $embeddingClient = new EmbeddingClient($config);
 
+    $translationService = new GreetingTranslationService($config);
+    $greetingSourceLocale = $defaults['greeting_source_locale'] ?? 'en-US';
     $preparedCharacters = [];
     foreach ($characters as $key => $character) {
         if (!is_array($character)) {
@@ -96,9 +99,9 @@ try {
         $markerSource = bundledPath((string)($character['marker'] ?? ''));
         $markerExtension = strtolower(pathinfo($markerSource, PATHINFO_EXTENSION));
         $markerPath = copyBundledFile($markerSource, 'markers', "default_{$safeKey}.{$markerExtension}");
-        // Provisioning must not delay Apache startup when the optional chat model is offline.
-        // Curator edits still use GreetingTranslationService; bundled greetings remain usable in every locale.
-        $translations = array_fill_keys(array_keys($config['localization']['locales']), $greeting);
+        // Use the same translation pipeline as curator-created characters.
+        // The bundled source language is independent of the site's UI default.
+        $translations = $translationService->translate($greeting, $greetingSourceLocale);
 
         if ($type === 'glb') {
             $mediaSource = bundledPath((string)($asset['src'] ?? ''));

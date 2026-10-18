@@ -1,5 +1,5 @@
 import { ApiService } from '../../ApiService.js';
-import { t } from '../../localization.js';
+import { t, getLocale } from '../../localization.js';
 import { onDomReady } from '../../domReady.js';
 
 onDomReady(() => {
@@ -230,7 +230,7 @@ onDomReady(() => {
 
             document.getElementById('name').value = character.name || '';
             document.getElementById('description').value = character.description || '';
-            document.getElementById('intro').value = character.intro || character.introduction || '';
+            document.getElementById('intro').value = character.introTranslations?.[getLocale()] || character.intro || character.introduction || '';
 
             const idleInput = document.getElementById('anim_idle');
             const talkInput = document.getElementById('anim_talk');
@@ -302,6 +302,7 @@ onDomReady(() => {
         errorMsg.classList.add('hidden');
 
         const formData = new FormData(form);
+        formData.set('source_locale', getLocale());
 
         // Remove files from payload if 'keep' is selected
         if (charId > 0) {

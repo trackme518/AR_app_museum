@@ -209,7 +209,7 @@ class CharacterService
         }
 
         // Translate the curator-authored greeting into every configured locale.
-        $introTranslations = $this->translationService->translate($dto->intro);
+        $introTranslations = $this->translationService->translate($dto->intro, $dto->sourceLocale);
 
         $mediaPath = null;
         $mediaType = null;

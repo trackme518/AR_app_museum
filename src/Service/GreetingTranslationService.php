@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use RuntimeException;
+use App\Exception\ValidationException;
 
 final class GreetingTranslationService
 {
@@ -22,8 +23,12 @@ final class GreetingTranslationService
     }
 
     /** @return array<string, string> */
-    public function translate(string $greeting): array
+    public function translate(string $greeting, ?string $sourceLocale = null): array
     {
+        $sourceLocale ??= $this->defaultLocale;
+        if (!array_key_exists($sourceLocale, $this->locales)) {
+            throw new ValidationException('Unsupported greeting source language.', 400);
+        }
         $languageList = json_encode($this->locales, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $payload = [
             'model' => $this->chatModel,
@@ -35,7 +40,7 @@ final class GreetingTranslationService
                 ],
                 [
                     'role' => 'user',
-                    'content' => "Source locale: {$this->defaultLocale}\nTarget locales: {$languageList}\nGreeting:\n{$greeting}",
+                    'content' => "Source locale: {$sourceLocale}\nTarget locales: {$languageList}\nGreeting:\n{$greeting}",
                 ],
             ],
         ];
@@ -79,7 +84,7 @@ final class GreetingTranslationService
 
         $result = [];
         foreach ($this->locales as $locale => $name) {
-            $translation = $locale === $this->defaultLocale ? $greeting : ($translations[$locale] ?? null);
+            $translation = $locale === $sourceLocale ? $greeting : ($translations[$locale] ?? null);
             if (!is_string($translation) || trim($translation) === '') {
                 throw new RuntimeException("V automatickém překladu chybí jazyk {$locale}.", 502);
             }
