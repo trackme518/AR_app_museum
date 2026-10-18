@@ -73,6 +73,17 @@ header {
     justify-content: center;
 }
 
+.app-version {
+    flex-shrink: 0;
+    margin: 0 20px 0 10px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    opacity: 0.8;
+    pointer-events: none;
+}
+
 #nav-menu {
     list-style: none;
     margin: 0;

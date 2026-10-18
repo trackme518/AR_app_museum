@@ -21,6 +21,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine app version
+        id: version
+        run: |
+          # Increment once per commit. 1.9 rolls over to 2.0.
+          # Keep this base aligned with the commit that introduced this logic.
+          base_commit=25
+          commits="$(git rev-list --count HEAD)"
+          step=$((commits - base_commit))
+          if [ "$step" -lt 0 ]; then step=0; fi
+          major=$((1 + step / 10))
+          minor=$((step % 10))
+          version="v${major}.${minor}"
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+          echo "App version: ${version} (commit count: ${commits})"
 
       - uses: docker/setup-qemu-action@v3
 
@@ -49,6 +66,8 @@ jobs:
           file: docker/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.value }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

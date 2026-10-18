@@ -17,6 +17,9 @@ RUN npm ci --omit=dev
 
 FROM php:8.3-apache
 
+ARG APP_VERSION=v1.0
+ENV APP_VERSION=${APP_VERSION}
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \

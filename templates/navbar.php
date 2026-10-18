@@ -1,5 +1,6 @@
 <?php
 $current_page = basename($_SERVER['SCRIPT_NAME']);
+$appVersion = getenv('APP_VERSION') ?: 'dev';
 ?>
 
 <header>
@@ -92,6 +93,8 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
             </li>
         </ul>
     </nav>
+
+    <span class="app-version"><?= htmlspecialchars($appVersion, ENT_QUOTES, 'UTF-8') ?></span>
 
     <script>
         // Pre-paint translation: applies the cached locale's strings to the
