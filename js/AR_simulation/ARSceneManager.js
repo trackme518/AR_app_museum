@@ -298,23 +298,29 @@ export class ARSceneManager {
         const results = frame.getImageTrackingResults();
         const referenceSpace = this.renderer.xr.getReferenceSpace();
 
-        // Hide lost markers instead of leaving characters at stale world poses.
-        this.anchorGroups.forEach((group) => {
-            if (group.userData.markerIndex !== null) group.visible = false;
-        });
         for (const result of results) {
             const anchorGroup = this.anchorGroups.find(g => g.userData.markerIndex === result.index);
-            
-            if (anchorGroup && result.trackingState === 'tracked') {
-                const pose = frame.getPose(result.imageSpace, referenceSpace);
-                
-                if (pose) {
-                    anchorGroup.visible = true;
-                    anchorGroup.userData.placed = true;
-                    anchorGroup.position.copy(pose.transform.position);
-                    anchorGroup.quaternion.copy(pose.transform.orientation);
-                }
-            }
+            if (!anchorGroup) continue;
+
+            const isTracked = result.trackingState === 'tracked';
+            const isEmulated = result.trackingState === 'emulated';
+
+            // Never reveal a character from an estimated pose before its marker
+            // has actually been recognized. Once recognized, WebXR can keep the
+            // imageSpace pose in the world reference space while the marker is
+            // outside the camera view. Some runtimes report that as `emulated`;
+            // others temporarily omit the result, in which case the last pose
+            // already stored on the Three.js group remains valid and visible.
+            if (!isTracked && !(isEmulated && anchorGroup.userData.placed)) continue;
+
+            const pose = frame.getPose(result.imageSpace, referenceSpace);
+            if (!pose) continue;
+
+            anchorGroup.position.copy(pose.transform.position);
+            anchorGroup.quaternion.copy(pose.transform.orientation);
+            anchorGroup.visible = true;
+            anchorGroup.userData.placed = true;
+            anchorGroup.userData.trackingState = result.trackingState;
         }
     }
 
