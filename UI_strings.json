@@ -113,6 +113,7 @@
     "character.markerStand": "Stand (upright on marker)",
     "character.markerFlat": "Flat (lays flush on marker)",
     "character.greenscreen": "Greenscreen background (remove 0x00FF00)",
+    "character.scaleMultiplier": "Scale multiplier",
     "character.animations": "3D Animations (Optional)",
     "character.animationsHelp": "Enter the exact, case-sensitive animation names stored in the .glb file.",
     "character.idleAnimation": "Idle animation",

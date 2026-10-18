@@ -115,6 +115,7 @@ try {
                 'video_talk' => null, 'video_special' => null,
                 'markerOrientation' => 'stand',
                 'greenscreen' => 0,
+                'scaleMultiplier' => (float)($asset['scale_multiplier'] ?? 1.0),
             ];
             continue;
         }
@@ -137,6 +138,7 @@ try {
             'video_special' => copyBundledFile($specialSource, 'media', "default_{$safeKey}_special.{$type}"),
             'markerOrientation' => 'stand',
             'greenscreen' => isset($asset['greenscreen']) && $asset['greenscreen'] === true ? 1 : 0,
+            'scaleMultiplier' => (float)($asset['scale_multiplier'] ?? 1.0),
         ];
     }
 
@@ -179,8 +181,8 @@ try {
     $insertCharacter = $db->prepare(
         'INSERT INTO characters
          (name, description, intro, intro_translations, media, typeOfMedia, marker, createdBy,
-          anim_idle, anim_talk, anim_special, video_talk, video_special, markerOrientation, greenscreen)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          anim_idle, anim_talk, anim_special, video_talk, video_special, markerOrientation, greenscreen, scaleMultiplier)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $linkCharacter = $db->prepare('INSERT INTO scenario_character (scenario_id, character_id) VALUES (?, ?)');
     foreach ($preparedCharacters as $character) {
@@ -192,6 +194,7 @@ try {
             $character['video_talk'], $character['video_special'],
             $character['markerOrientation'] ?? 'stand',
             $character['greenscreen'] ?? 0,
+            $character['scaleMultiplier'] ?? 1.0,
         ]);
         $linkCharacter->execute([$programId, (int)$db->lastInsertId()]);
     }

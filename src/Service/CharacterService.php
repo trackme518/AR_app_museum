@@ -74,7 +74,8 @@ class CharacterService
             $char->videoTalk,
             $char->videoSpecial,
             $char->markerOrientation ?: 'stand',
-            $char->greenscreen ?? false
+            $char->greenscreen ?? false,
+            $char->scaleMultiplier
         );
     }
 
@@ -155,6 +156,9 @@ class CharacterService
         }
         if (empty(trim($dto->intro))) {
             throw new ValidationException("A greeting is required.", 400);
+        }
+        if (!is_finite($dto->scaleMultiplier) || $dto->scaleMultiplier < 0.1 || $dto->scaleMultiplier > 10.0) {
+            throw new ValidationException("Scale multiplier must be between 0.1 and 10.0.", 400);
         }
 
         $nameExists = $this->repository->getByName($dto->name);
@@ -299,7 +303,8 @@ class CharacterService
                     $dto->characterType === 'VIDEO' ? ($talkUpload['path'] ?? $existingChar->videoTalk) : null,
                     $dto->characterType === 'VIDEO' ? ($specialUpload['path'] ?? $existingChar->videoSpecial) : null,
                     $dto->markerOrientation ?: 'stand',
-                    $dto->greenscreen ?? false
+                    $dto->greenscreen ?? false,
+                    $dto->scaleMultiplier
                 );
 
                 $this->repository->update($updatedChar);
@@ -322,7 +327,8 @@ class CharacterService
                     $talkUpload['path'] ?? null,
                     $specialUpload['path'] ?? null,
                     $dto->markerOrientation ?: 'stand',
-                    $dto->greenscreen ?? false
+                    $dto->greenscreen ?? false,
+                    $dto->scaleMultiplier
                 );
 
                 $this->repository->create($newChar);

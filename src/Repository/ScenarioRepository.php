@@ -120,7 +120,8 @@ class ScenarioRepository
                 $row['video_talk'] ?? null,
                 $row['video_special'] ?? null,
                 $row['markerOrientation'] ?? 'stand',
-                filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN)
+                filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                (float)($row['scaleMultiplier'] ?? 1.0)
             );
         }
 

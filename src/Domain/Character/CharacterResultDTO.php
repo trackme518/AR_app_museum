@@ -33,7 +33,8 @@ class CharacterResultDTO
         public ?string $videoTalk = null,
         public ?string $videoSpecial = null,
         public ?string $markerOrientation = 'stand',
-        public bool $greenscreen = false
+        public bool $greenscreen = false,
+        public float $scaleMultiplier = 1.0
     ) {
     }
 }

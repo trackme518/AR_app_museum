@@ -8,6 +8,7 @@
       "greeting": "Welcome. I am Viktor von Hradec, a Ritter of Prague in service to the Crown. What would you like to know about our city and its society?",
       "asset": {
         "type": "glb",
+        "scale_multiplier": 1.0,
         "src": "knight/knight.glb",
         "states": {
           "idle": "idle",
@@ -23,6 +24,7 @@
       "greeting": "Welcome. I am Anna Králová, a seamstress here in Prague. Would you like to hear about my work, our fashions, or everyday life in the city?",
       "asset": {
         "type": "glb",
+        "scale_multiplier": 1.0,
         "src": "woman/woman.glb",
         "states": {
           "idle": "idle",
@@ -38,6 +40,7 @@
       "greeting": "Welcome to my butcher's shop. I am Martin Dvořák; ask me about the market, my trade, or daily life in Prague.",
       "asset": {
         "type": "mp4",
+        "scale_multiplier": 1.0,
         "greenscreen": true,
         "states": {
           "idle": "butcher/butcher_idle_greenscreen.mp4",

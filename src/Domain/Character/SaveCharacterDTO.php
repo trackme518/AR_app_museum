@@ -36,7 +36,8 @@ class SaveCharacterDTO
         public ?array $videoSpecialFile,
         public ?string $markerOrientation = 'stand',
         public bool $greenscreen = false,
-        public ?string $sourceLocale = null
+        public ?string $sourceLocale = null,
+        public float $scaleMultiplier = 1.0
     ) {
     }
 }

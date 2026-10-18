@@ -45,7 +45,8 @@ class CharacterRepository
                 $row['video_talk'] ?? null,
                 $row['video_special'] ?? null,
                 $row['markerOrientation'] ?? 'stand',
-                filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN)
+                filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                (float)($row['scaleMultiplier'] ?? 1.0)
             );
         }
 
@@ -84,7 +85,8 @@ class CharacterRepository
             $row['video_talk'] ?? null,
             $row['video_special'] ?? null,
             $row['markerOrientation'] ?? 'stand',
-            filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            (float)($row['scaleMultiplier'] ?? 1.0)
         );
     }
 
@@ -120,7 +122,8 @@ class CharacterRepository
             $row['video_talk'] ?? null,
             $row['video_special'] ?? null,
             $row['markerOrientation'] ?? 'stand',
-            filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            (float)($row['scaleMultiplier'] ?? 1.0)
         );
     }
 
@@ -154,8 +157,8 @@ class CharacterRepository
     public function create(Character $character): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO characters (name, description, intro, intro_translations, media, typeOfMedia, marker, createdBy, anim_idle, anim_talk, anim_special, video_talk, video_special, markerOrientation, greenscreen)
-            VALUES (:name, :description, :intro, :intro_translations, :media, :typeOfMedia, :marker, :createdBy, :anim_idle, :anim_talk, :anim_special, :video_talk, :video_special, :markerOrientation, :greenscreen)
+            INSERT INTO characters (name, description, intro, intro_translations, media, typeOfMedia, marker, createdBy, anim_idle, anim_talk, anim_special, video_talk, video_special, markerOrientation, greenscreen, scaleMultiplier)
+            VALUES (:name, :description, :intro, :intro_translations, :media, :typeOfMedia, :marker, :createdBy, :anim_idle, :anim_talk, :anim_special, :video_talk, :video_special, :markerOrientation, :greenscreen, :scaleMultiplier)
         ");
 
         $stmt->execute([
@@ -173,7 +176,8 @@ class CharacterRepository
             ':video_talk' => $character->videoTalk,
             ':video_special' => $character->videoSpecial,
             ':markerOrientation' => $character->markerOrientation,
-            ':greenscreen' => $character->greenscreen ? 1 : 0
+            ':greenscreen' => $character->greenscreen ? 1 : 0,
+            ':scaleMultiplier' => $character->scaleMultiplier
         ]);
     }
 
@@ -200,7 +204,8 @@ class CharacterRepository
                 video_talk = :video_talk,
                 video_special = :video_special,
                 markerOrientation = :markerOrientation,
-                greenscreen = :greenscreen
+                greenscreen = :greenscreen,
+                scaleMultiplier = :scaleMultiplier
             WHERE id = :id
         ");
 
@@ -220,7 +225,8 @@ class CharacterRepository
             ':video_talk' => $character->videoTalk,
             ':video_special' => $character->videoSpecial,
             ':markerOrientation' => $character->markerOrientation,
-            ':greenscreen' => $character->greenscreen ? 1 : 0
+            ':greenscreen' => $character->greenscreen ? 1 : 0,
+            ':scaleMultiplier' => $character->scaleMultiplier
         ]);
     }
 

@@ -65,6 +65,7 @@ CREATE TABLE characters (
     video_special TEXT DEFAULT NULL,
     markerOrientation VARCHAR(16) NOT NULL DEFAULT 'stand',
     greenscreen TINYINT(1) NOT NULL DEFAULT 0,
+    scaleMultiplier DECIMAL(6,3) NOT NULL DEFAULT 1.000,
     CONSTRAINT fk_char_user FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

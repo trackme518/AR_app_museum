@@ -96,11 +96,11 @@ export function createVideoTexture(mediaPath, loop = true, greenscreen = false) 
 }
 
 // Loads a static image and returns a transparent material
-export function createImageTexture(mediaPath) {
+export function createImageTexture(mediaPath, onLoad) {
     const textureLoader = new THREE.TextureLoader();
     const texture = textureLoader.load(
         mediaPath,
-        undefined, 
+        (loadedTexture) => onLoad?.(loadedTexture),
         undefined, 
         (err) => console.error(`Failed to load texture: ${mediaPath}`, err)
     );

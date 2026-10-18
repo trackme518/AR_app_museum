@@ -58,6 +58,10 @@ $page_title_key = $id > 0 ? 'character.edit' : 'character.new';
             <textarea name="intro" id="intro" required rows="3"></textarea>
             <br>
 
+            <label for="scale_multiplier"><span data-i18n="character.scaleMultiplier">Scale multiplier</span>:</label>
+            <input type="number" name="scale_multiplier" id="scale_multiplier" value="1.0" min="0.1" max="10" step="0.1" required>
+            <br>
+
             <fieldset>
                 <legend id="media_fieldset_legend"><span data-i18n="character.image">Image</span> *</legend>
 

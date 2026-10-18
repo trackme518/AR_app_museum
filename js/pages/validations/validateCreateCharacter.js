@@ -231,6 +231,7 @@ onDomReady(() => {
             document.getElementById('name').value = character.name || '';
             document.getElementById('description').value = character.description || '';
             document.getElementById('intro').value = character.introTranslations?.[getLocale()] || character.intro || character.introduction || '';
+            document.getElementById('scale_multiplier').value = character.scaleMultiplier ?? character.scale_multiplier ?? 1.0;
 
             const idleInput = document.getElementById('anim_idle');
             const talkInput = document.getElementById('anim_talk');

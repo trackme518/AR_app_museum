@@ -7,13 +7,17 @@ import {
 } from './spriteUtils.js';
 import { THREE } from './three-bundle.js';
 
+// Preserve the current apparent height of the bundled woman while normalizing
+// every uploaded asset to the same character height in AR world units (metres).
+const TARGET_CHARACTER_HEIGHT_METERS = 0.53;
+
 export class ARSpawner {
     constructor(chatContainer, onCharacterClickCallback) {
         this.arManager = new ARSceneManager(
             chatContainer,
             onCharacterClickCallback
         );
-        this.targetScale = 0.3;
+        this.targetCharacterHeight = TARGET_CHARACTER_HEIGHT_METERS;
         this.activeIntervals = [];
 
         this.setupXREvents();
@@ -110,10 +114,9 @@ export class ARSpawner {
 
     async setup3DModel(charData) {
         try {
-            // Load geometry and scale it down to appropriate AR height
+            // Load geometry before deriving a scale from its actual bounds.
             const gltf = await loadGLTFModel(charData.media);
             const mesh = gltf.scene;
-            mesh.scale.set(0.1, 0.1, 0.1);
 
             // Initialize animation pipeline if clips exist
             if (gltf.animations && gltf.animations.length > 0) {
@@ -131,6 +134,16 @@ export class ARSpawner {
                 // Cached bounds do not follow skeletal animation in this bundle.
                 object.frustumCulled = false;
             });
+
+            const bounds = new THREE.Box3().setFromObject(mesh);
+            const sourceHeight = bounds.max.y - bounds.min.y;
+            if (Number.isFinite(sourceHeight) && sourceHeight > 0) {
+                const normalizedHeight = this.targetCharacterHeight * this.getScaleMultiplier(charData);
+                mesh.scale.multiplyScalar(normalizedHeight / sourceHeight);
+                mesh.updateMatrixWorld(true);
+            } else {
+                console.warn('Could not normalize model height because its bounds are empty');
+            }
             return mesh;
         } catch (err) {
             console.error('Error loading 3D model:', err);
@@ -142,6 +155,7 @@ export class ARSpawner {
         // Map texture sources based on specified media type
         let material;
         let video = null;
+        const normalizedHeight = this.targetCharacterHeight * this.getScaleMultiplier(charData);
 
         if (isVideo) {
             const statePaths = {
@@ -185,12 +199,16 @@ export class ARSpawner {
             }
             charData.playAnimation('idle');
 
-            const mesh = createCharacterMesh(material, 0.25, 0.25);
+            const mesh = createCharacterMesh(
+                material,
+                normalizedHeight,
+                normalizedHeight
+            );
             const resize = () => {
                 if (!video.videoWidth || !video.videoHeight) return;
                 const aspect = video.videoWidth / video.videoHeight;
-                const width = 0.25 * Math.max(1, aspect);
-                const height = 0.25 * Math.max(1, 1 / aspect);
+                const height = normalizedHeight;
+                const width = height * aspect;
                 mesh.geometry.dispose();
                 mesh.geometry = new THREE.PlaneGeometry(width, height);
                 // Plane geometry is centered; keep the feet on the placement origin.
@@ -200,13 +218,31 @@ export class ARSpawner {
             resize();
             return { mesh, video, videos: Object.values(states).map((state) => state.video) };
         } else {
-            material = createImageTexture(charData.media);
+            let mesh;
+            const resize = (texture) => {
+                const image = texture.image;
+                const width = image?.naturalWidth || image?.width;
+                const height = image?.naturalHeight || image?.height;
+                if (!mesh || !width || !height) return;
+                mesh.geometry.dispose();
+                mesh.geometry = new THREE.PlaneGeometry(
+                    normalizedHeight * (width / height),
+                    normalizedHeight
+                );
+            };
+            material = createImageTexture(charData.media, resize);
+            mesh = createCharacterMesh(
+                material,
+                normalizedHeight,
+                normalizedHeight
+            );
+            return { mesh, video, videos: [] };
         }
+    }
 
-        const mesh = createCharacterMesh(material, 0.25, 0.25);
-        mesh.scale.set(1, 1, 1);
-
-        return { mesh, video, videos: video ? [video] : [] };
+    getScaleMultiplier(charData) {
+        const multiplier = Number(charData.scaleMultiplier ?? charData.scale_multiplier ?? 1);
+        return Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1;
     }
 
     scheduleVideoSpecial(charData) {

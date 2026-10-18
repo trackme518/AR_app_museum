@@ -83,7 +83,8 @@ class CharacterController extends AbstractController
             markerOrientation: $data['marker_orientation'] ?? 'stand',
             greenscreen: isset($data['greenscreen']) && $data['greenscreen'] === true,
             sourceLocale: isset($data['source_locale']) && is_string($data['source_locale'])
-                ? $data['source_locale'] : null
+                ? $data['source_locale'] : null,
+            scaleMultiplier: (float)($data['scale_multiplier'] ?? 1.0)
         );
 
         try {
