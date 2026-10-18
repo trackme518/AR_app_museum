@@ -275,8 +275,8 @@ export class ARSceneManager {
             this.updateHitTest(frame);
             if (typeof frame.getImageTrackingResults === 'function') {
                 this.updateImageTracking(frame);
-                this.updateBillboards(frame);
             }
+            this.updateBillboards(frame);
         }
 
         this.renderer.render(this.scene, this.camera);
@@ -286,10 +286,14 @@ export class ARSceneManager {
         const results = frame.getImageTrackingResults();
         const referenceSpace = this.renderer.xr.getReferenceSpace();
 
+        // Hide lost markers instead of leaving characters at stale world poses.
+        this.anchorGroups.forEach((group) => {
+            if (group.userData.markerIndex !== null) group.visible = false;
+        });
         for (const result of results) {
             const anchorGroup = this.anchorGroups.find(g => g.userData.markerIndex === result.index);
             
-            if (anchorGroup && !anchorGroup.userData.placed && result.trackingState === 'tracked') {
+            if (anchorGroup && result.trackingState === 'tracked') {
                 const pose = frame.getPose(result.imageSpace, referenceSpace);
                 
                 if (pose) {
@@ -297,7 +301,6 @@ export class ARSceneManager {
                     anchorGroup.userData.placed = true;
                     anchorGroup.position.copy(pose.transform.position);
                     anchorGroup.quaternion.copy(pose.transform.orientation);
-                    // WebXR already provides the correct upright orientation; no correction needed.
                 }
             }
         }
@@ -338,8 +341,9 @@ export class ARSceneManager {
             // yaw toward the viewer (classic Doom-style cylindrical billboard).
             group.updateWorldMatrix(true, false);
             const localCamera = group.worldToLocal(cameraPosition.clone());
-            const yaw = Math.atan2(localCamera.x, localCamera.z);
             const baseRotation = group.userData.billboardBaseRotation;
+            localCamera.applyQuaternion(baseRotation.clone().invert());
+            const yaw = Math.atan2(localCamera.x, localCamera.z);
             character.quaternion.copy(baseRotation);
             character.rotateY(yaw);
         });

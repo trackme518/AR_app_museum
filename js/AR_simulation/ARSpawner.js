@@ -91,18 +91,20 @@ export class ARSpawner {
 
         // Models and billboards share the same marker-local placement. A billboard
         // gets only an additional camera-facing yaw in the scene manager.
-        this.positionMesh(mesh, isGround, isModel, charData.markerOrientation);
+        const characterRoot = this.positionMesh(
+            mesh, charData.marker ? isGround : false, isModel, charData.markerOrientation
+        );
 
         // Attach metadata for raycaster hit detection
         mesh.userData = charData;
 
         // Group mesh to separate marker rotation logic from object rotation logic.
         const anchorGroup = new THREE.Group();
-        anchorGroup.userData.billboardMode = isVideo ? 'local-yaw' : null;
-        anchorGroup.userData.billboardBaseRotation = mesh.quaternion.clone();
-        anchorGroup.add(mesh);
+        anchorGroup.userData.billboardMode = !isModel && charData.markerOrientation !== 'flat' ? 'local-yaw' : null;
+        anchorGroup.userData.billboardBaseRotation = characterRoot.quaternion.clone();
+        anchorGroup.add(characterRoot);
 
-        this.arManager.addObjectToScene(anchorGroup, index, isVideo, videoElements);
+        this.arManager.addObjectToScene(anchorGroup, index, !isModel, videoElements);
     }
 
     async setup3DModel(charData) {
@@ -173,15 +175,19 @@ export class ARSpawner {
             }
             charData.playAnimation('idle');
 
-            // Scale the billboard mesh to match the marker size (0.25m aspect-corrected)
-            const aspect = 1; // Default square
-            if (video.videoWidth && video.videoHeight) {
-                aspect = video.videoWidth / video.videoHeight;
-            }
-            const width = 0.25 * Math.max(1, aspect);
-            const height = 0.25 * Math.max(1, 1 / aspect);
-            const mesh = createCharacterMesh(material, width, height);
-            mesh.scale.set(1, 1, 1); // Reset scale, use geometry dimensions
+            const mesh = createCharacterMesh(material, 0.25, 0.25);
+            const resize = () => {
+                if (!video.videoWidth || !video.videoHeight) return;
+                const aspect = video.videoWidth / video.videoHeight;
+                const width = 0.25 * Math.max(1, aspect);
+                const height = 0.25 * Math.max(1, 1 / aspect);
+                mesh.geometry.dispose();
+                mesh.geometry = new THREE.PlaneGeometry(width, height);
+                // Plane geometry is centered; keep the feet on the placement origin.
+                mesh.position.y = charData.markerOrientation === 'flat' ? 0 : height / 2;
+            };
+            video.addEventListener('loadedmetadata', resize);
+            resize();
             return { mesh, video, videos: Object.values(states).map((state) => state.video) };
         } else {
             material = createImageTexture(charData.media);
@@ -207,22 +213,22 @@ export class ARSpawner {
     }
 
     positionMesh(mesh, isGround, isModel, markerOrientation = 'stand') {
-        // Compute bounding box to center the model on the marker surface.
+        const flat = markerOrientation === 'flat';
         const box = new THREE.Box3().setFromObject(mesh);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const centerY = size.y / 2;
+        const center = box.getCenter(new THREE.Vector3());
+        // Normalize asset origins before rotation: center horizontally and put
+        // the actual bounding-box bottom at the pivot, even for off-center GLBs.
+        mesh.position.x -= center.x;
+        mesh.position.y -= flat ? center.y : box.min.y;
+        mesh.position.z -= flat ? box.min.z : center.z;
 
-        // Vertical offset:
-        // - 'stand': Model stands upright; lower it by half its height so feet touch the marker.
-        // - 'flat': Model lies flush; center it on the marker plane (y=0).
-        const yOffset = markerOrientation === 'flat' ? 0 : -centerY;
-        mesh.position.set(0, yOffset, 0);
-
-        // markerOrientation: 'stand' = upright perpendicular to the marker,
-        // 'flat' = flush lying on the marker surface.
-        mesh.rotation.set(0, 0, 0);
-        if (markerOrientation === 'flat') mesh.rotation.x = -Math.PI / 2;
+        const pivot = new THREE.Group();
+        pivot.add(mesh);
+        // Image-space XY is the marker plane; +Z points out of its front.
+        // Ground characters stand along +Z. Wall characters stand along +Y.
+        // Flat content keeps its XY plane aligned with the marker.
+        if (!flat && isGround) pivot.rotation.x = Math.PI / 2;
+        return pivot;
     }
 
     setupAnimations(mesh, animations, charData) {
