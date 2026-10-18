@@ -222,6 +222,8 @@ export class ARSceneManager {
     }
 
     performRaycast() {
+        // Selection can arrive between frames, after a pose or animation update.
+        this.controller.updateWorldMatrix(true, false);
         // Calculate raycast direction based on controller orientation
         const tempMatrix = new THREE.Matrix4();
         tempMatrix.identity().extractRotation(this.controller.matrixWorld);
@@ -232,6 +234,16 @@ export class ARSceneManager {
 
         // Intersect only with currently visible tracking groups
         const visibleGroups = this.anchorGroups.filter(g => g.visible);
+        visibleGroups.forEach((group) => {
+            group.updateMatrixWorld(true);
+            group.traverse((object) => {
+                if (!object.isSkinnedMesh) return;
+                // Both bounds are cached by this Three.js version. Placement
+                // measures them before animation, so refresh before testing taps.
+                object.computeBoundingBox();
+                object.computeBoundingSphere();
+            });
+        });
         const intersects = raycaster.intersectObjects(visibleGroups, true);
         
         if (intersects.length === 0) return null;

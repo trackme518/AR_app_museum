@@ -92,11 +92,12 @@ export class ARSpawner {
         // Models and billboards share the same marker-local placement. A billboard
         // gets only an additional camera-facing yaw in the scene manager.
         const characterRoot = this.positionMesh(
-            mesh, charData.marker ? isGround : false, isModel, charData.markerOrientation
+            mesh, charData.marker ? isGround : true, isModel, charData.markerOrientation
         );
 
         // Attach metadata for raycaster hit detection
         mesh.userData = charData;
+        characterRoot.userData = charData;
 
         // Group mesh to separate marker rotation logic from object rotation logic.
         const anchorGroup = new THREE.Group();
@@ -121,6 +122,15 @@ export class ARSpawner {
                 console.warn('Loaded 3D model does not contain any animations');
             }
             
+            // Evaluate the starting pose before measuring animated geometry.
+            mesh.updateMatrixWorld(true);
+            mesh.traverse((object) => {
+                if (!object.isSkinnedMesh) return;
+                object.computeBoundingBox();
+                object.computeBoundingSphere();
+                // Cached bounds do not follow skeletal animation in this bundle.
+                object.frustumCulled = false;
+            });
             return mesh;
         } catch (err) {
             console.error('Error loading 3D model:', err);
@@ -224,10 +234,11 @@ export class ARSpawner {
 
         const pivot = new THREE.Group();
         pivot.add(mesh);
-        // Image-space XY is the marker plane; +Z points out of its front.
-        // Ground characters stand along +Z. Wall characters stand along +Y.
-        // Flat content keeps its XY plane aligned with the marker.
-        if (!flat && isGround) pivot.rotation.x = Math.PI / 2;
+        // Chrome/ARCore image poses use XZ for the image plane, +Y for
+        // its outward normal, and +Z toward the image's bottom edge.
+        // Keep ground models Y-up; wall models point toward the image's top.
+        // Flat content maps its XY plane onto the marker's XZ plane.
+        if (flat || !isGround) pivot.rotation.x = -Math.PI / 2;
         return pivot;
     }
 
@@ -287,6 +298,7 @@ export class ARSpawner {
         };
 
         charData.playAnimation(idleName);
+        mixer.update(0);
 
         // Restore idle state automatically after singular animations finish
         mixer.addEventListener('finished', (e) => {
