@@ -183,6 +183,7 @@ header {
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
+    z-index: 2;
 }
 
 .lang-picker select option {
@@ -190,11 +191,6 @@ header {
     background: #0f1d2e;
     color: var(--text-strong);
 }
-
-/* The overlay sits above the text but stays fully transparent. */
-.lang-picker select {
-    z-index: 2;
-} 
 
 /* --- Collapsible / hamburger mode ---
    Applied by JS when the menu overflows its container, and always on small

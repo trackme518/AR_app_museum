@@ -2,10 +2,6 @@
    css/base.css, loaded by templates/head_content.php on every page.
    This file only contains list-page-specific styling. */
 
-*, *::before, *::after {
-    box-sizing: border-box;
-}
-
 main {
     max-width: 800px;
     margin: 0 auto;

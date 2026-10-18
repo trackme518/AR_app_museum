@@ -69,11 +69,9 @@ export class ARSceneManager {
 
         // Android Chrome and compatible iOS WebXR viewers expose the same API.
         const sessionOptions = {
-            // Image tracking is still experimental and some WebXR runtimes expose
-            // the API without accepting it as a required session feature. Keeping
-            // it optional lets AR start while trackedImages/getImageTrackingResults
-            // continue to provide marker-only placement when supported.
-            optionalFeatures: ['dom-overlay', 'image-tracking', 'hit-test'],
+            // Marker-based placement requires image tracking to be enabled.
+            requiredFeatures: ['image-tracking'],
+            optionalFeatures: ['dom-overlay', 'hit-test'],
             domOverlay: { root: document.body },
         };
         if (trackedImages.length > 0) sessionOptions.trackedImages = trackedImages;

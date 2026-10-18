@@ -24,6 +24,10 @@
 }
 
 /* --- BASE STYLES --- */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 html {
     /* Reserve the scrollbar gutter on every page so switching between
        short (e.g. login) and long (e.g. home) pages never shifts the

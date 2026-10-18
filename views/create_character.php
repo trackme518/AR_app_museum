@@ -29,6 +29,7 @@ $page_title_key = $id > 0 ? 'character.edit' : 'character.new';
         <form id="character_form">
             
             <input type="hidden" id="char_id" name="id" value="<?php echo $id; ?>">
+            <input type="hidden" id="marker_action" name="marker_action" value="keep">
             <input type="hidden" id="current_user_id" value="<?php echo $_SESSION['user_id']; ?>">
             <input type="hidden" id="has_global_edit" value="<?php echo $hasGlobalEdit ? '1' : '0'; ?>">
             
@@ -75,6 +76,11 @@ $page_title_key = $id > 0 ? 'character.edit' : 'character.new';
                     <label for="photo" id="file_input_label"><span data-i18n="character.selectImage">Select an image</span>:</label>
                     <input type="file" id="photo" name="photo" accept="image/*" <?php echo ($id === 0) ? 'required' : ''; ?>>
                 </div>
+
+                <label id="greenscreen_option" for="greenscreen">
+                    <input type="checkbox" id="greenscreen" name="greenscreen">
+                    <span data-i18n="character.greenscreen">Greenscreen background (remove 0x00FF00)</span>
+                </label>
             </fieldset>
 
             <fieldset id="video_states_fieldset" class="hidden">
@@ -90,22 +96,12 @@ $page_title_key = $id > 0 ? 'character.edit' : 'character.new';
             </fieldset>
 
             <fieldset>
-                <legend data-i18n="character.marker">Image marker (optional)</legend>
+                <legend data-i18n="character.marker">Image marker</legend>
                 <p data-i18n="character.markerHelp">With a marker, the character appears at its first recognized position. Without one, it can be placed once on a tracked surface.</p>
 
-                <div id="edit_marker_options" class="<?php echo $id > 0 ? '' : 'hidden'; ?>">
-                    <label for="marker_action"><span data-i18n="character.fileAction">File action</span>:</label>
-                    <select id="marker_action" name="marker_action">
-                        <option value="keep" data-i18n="character.keepFile">Keep current file</option>
-                        <option value="update" data-i18n="character.replaceFile">Upload a replacement</option>
-                        <option value="remove" data-i18n="character.clearMarkerPlacement">Clear marker and use surface placement</option>
-                    </select>
-                    <br>
+                <div id="marker_preview_container" class="marker-preview"></div>
 
-                    <div id="marker_preview_container" class="marker-preview"></div>
-                </div>
-
-                <div id="marker_input_container" class="<?php echo ($id > 0) ? 'hidden' : ''; ?>">
+                <div id="marker_input_container">
                     <label for="marker"><span data-i18n="character.selectMarker">Select a marker</span>:</label>
                     <input type="file" id="marker" name="marker" accept="image/*">
                 </div>
@@ -117,10 +113,6 @@ $page_title_key = $id > 0 ? 'character.edit' : 'character.new';
                     <option value="flat" data-i18n="character.markerFlat">Flat (lays flush on marker)</option>
                 </select>
                 <br>
-                <label for="greenscreen">
-                    <input type="checkbox" id="greenscreen" name="greenscreen">
-                    <span data-i18n="character.greenscreen">Greenscreen background (remove 0x00FF00)</span>
-                </label>
             </fieldset>
 
             <fieldset id="animations_fieldset" class="hidden">

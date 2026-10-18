@@ -18,8 +18,7 @@ onDomReady(() => {
     const fileInput = document.getElementById('photo');
     const previewContainer = document.getElementById('media_preview_container');
 
-    const markerActionSelect = document.getElementById('marker_action');
-    const markerContainer = document.getElementById('marker_input_container');
+    const markerActionInput = document.getElementById('marker_action');
     const markerInput = document.getElementById('marker');
     const markerClearButton = document.getElementById('marker_clear_button');
     const markerPreviewContainer = document.getElementById('marker_preview_container');
@@ -31,11 +30,21 @@ onDomReady(() => {
     const fileInputLabelText = fileInputLabel.querySelector('[data-i18n]');
     const animationsFieldset = document.getElementById('animations_fieldset');
     const videoStatesFieldset = document.getElementById('video_states_fieldset');
+    const greenscreenOption = document.getElementById('greenscreen_option');
+    const greenscreenCheckbox = document.getElementById('greenscreen');
     const talkPreview = document.getElementById('video_talk_preview');
     const specialPreview = document.getElementById('video_special_preview');
 
     const apiService = new ApiService();
     let originalCharacterType = 'IMAGE';
+    let markerObjectUrl = null;
+
+    function clearMarkerObjectUrl() {
+        if (markerObjectUrl) {
+            URL.revokeObjectURL(markerObjectUrl);
+            markerObjectUrl = null;
+        }
+    }
 
 
     function showError(message) {
@@ -69,6 +78,13 @@ onDomReady(() => {
             if (animationsFieldset) animationsFieldset.classList.add('hidden');  
             videoStatesFieldset.classList.add('hidden');
         }
+
+        const greenscreenAllowed = type !== '3D';
+        greenscreenOption?.classList.toggle('hidden', !greenscreenAllowed);
+        if (!greenscreenAllowed && greenscreenCheckbox) {
+            greenscreenCheckbox.checked = false;
+        }
+
         mediaLegendText.dataset.i18n = mediaKey;
         mediaLegendText.textContent = t(mediaKey);
         fileInputLabelText.dataset.i18n = fileLabelKey;
@@ -158,6 +174,7 @@ onDomReady(() => {
      * @param {Object} character - The character data from API.
      */
     function renderMarkerPreview(character) {
+        clearMarkerObjectUrl();
         delete markerPreviewContainer.dataset.i18n;
         markerPreviewContainer.innerHTML = '';
         
@@ -170,6 +187,28 @@ onDomReady(() => {
         img.alt = t('character.markerPreviewAlt');
         img.width = 200;
         
+        markerPreviewContainer.append(label, img);
+    }
+
+    /**
+     * Renders a preview of the marker file selected in the form.
+     * @param {File} file
+     */
+    function renderSelectedMarkerPreview(file) {
+        clearMarkerObjectUrl();
+        markerObjectUrl = URL.createObjectURL(file);
+        delete markerPreviewContainer.dataset.i18n;
+        markerPreviewContainer.replaceChildren();
+
+        const label = document.createElement('p');
+        label.dataset.i18n = 'character.selectedMarker';
+        label.textContent = t('character.selectedMarker');
+
+        const img = document.createElement('img');
+        img.src = markerObjectUrl;
+        img.alt = t('character.markerPreviewAlt');
+        img.width = 200;
+
         markerPreviewContainer.append(label, img);
     }
 
@@ -244,7 +283,6 @@ onDomReady(() => {
                 orientationSelect.value = character.markerOrientation;
             }
 
-            const greenscreenCheckbox = document.getElementById('greenscreen');
             if (greenscreenCheckbox && typeof character.greenscreen !== 'undefined') {
                 greenscreenCheckbox.checked = character.greenscreen === true || character.greenscreen === 1;
             }
@@ -268,7 +306,7 @@ onDomReady(() => {
         // Remove files from payload if 'keep' is selected
         if (charId > 0) {
             if (actionSelect && actionSelect.value === 'keep') formData.delete('photo');
-            if (markerActionSelect && markerActionSelect.value !== 'update') formData.delete('marker');
+            if (!markerInput.files || markerInput.files.length === 0) formData.delete('marker');
         }
 
         try {
@@ -290,17 +328,19 @@ onDomReady(() => {
         });
     }
 
-    if (markerActionSelect) {
-        markerActionSelect.addEventListener('change', function() {
-            handleActionToggle(this.value, markerContainer, markerInput);
-        });
-    }
+    markerInput?.addEventListener('change', () => {
+        if (markerInput.files && markerInput.files.length > 0) {
+            markerActionInput.value = 'update';
+            renderSelectedMarkerPreview(markerInput.files[0]);
+        } else if (markerActionInput.value !== 'remove') {
+            markerActionInput.value = 'keep';
+        }
+    });
 
     markerClearButton?.addEventListener('click', () => {
         markerInput.value = '';
-        markerInput.required = false;
-        if (markerActionSelect) markerActionSelect.value = 'remove';
-        markerContainer.classList.remove('hidden');
+        markerActionInput.value = 'remove';
+        clearMarkerObjectUrl();
         markerPreviewContainer.dataset.i18n = 'character.surfacePlacement';
         markerPreviewContainer.textContent = t('character.surfacePlacement');
     });
