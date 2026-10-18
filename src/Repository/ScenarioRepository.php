@@ -121,7 +121,9 @@ class ScenarioRepository
                 $row['video_special'] ?? null,
                 $row['markerOrientation'] ?? 'stand',
                 filter_var($row['greenscreen'] ?? false, FILTER_VALIDATE_BOOLEAN),
-                (float)($row['scaleMultiplier'] ?? 1.0)
+                (float)($row['scaleMultiplier'] ?? 1.0),
+                (float)($row['markerWidth'] ?? 0.210),
+                (float)($row['markerHeight'] ?? 0.210)
             );
         }
 

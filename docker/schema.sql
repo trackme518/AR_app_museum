@@ -54,6 +54,8 @@ CREATE TABLE characters (
     markerOrientation VARCHAR(16) NOT NULL DEFAULT 'stand',
     greenscreen TINYINT(1) NOT NULL DEFAULT 0,
     scaleMultiplier DECIMAL(6,3) NOT NULL DEFAULT 1.000,
+    markerWidth DECIMAL(6,3) NOT NULL DEFAULT 0.210,
+    markerHeight DECIMAL(6,3) NOT NULL DEFAULT 0.210,
     CONSTRAINT fk_char_user FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

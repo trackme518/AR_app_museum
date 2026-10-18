@@ -117,6 +117,12 @@ $page_title_key = $id > 0 ? 'character.edit' : 'character.new';
                     <option value="flat" data-i18n="character.markerFlat">Flat (lays flush on marker)</option>
                 </select>
                 <br>
+                <label for="marker_width"><span data-i18n="character.markerWidth">Marker width (metres)</span>:</label>
+                <input type="number" id="marker_width" name="marker_width" value="0.210" min="0.001" max="5" step="0.001" required>
+                <br>
+                <label for="marker_height"><span data-i18n="character.markerHeight">Marker height (metres)</span>:</label>
+                <input type="number" id="marker_height" name="marker_height" value="0.210" min="0.001" max="5" step="0.001" required>
+                <p data-i18n="character.markerDimensionsHelp">Measure the printed marker itself. A square marker fitted to portrait A4 is 0.210 × 0.210 metres.</p>
             </fieldset>
 
             <fieldset id="animations_fieldset" class="hidden">

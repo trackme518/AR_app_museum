@@ -283,6 +283,8 @@ onDomReady(() => {
             if (orientationSelect && character.markerOrientation) {
                 orientationSelect.value = character.markerOrientation;
             }
+            document.getElementById('marker_width').value = character.markerWidth ?? character.marker_width ?? 0.210;
+            document.getElementById('marker_height').value = character.markerHeight ?? character.marker_height ?? 0.210;
 
             if (greenscreenCheckbox && typeof character.greenscreen !== 'undefined') {
                 greenscreenCheckbox.checked = character.greenscreen === true || character.greenscreen === 1;

@@ -75,7 +75,9 @@ class CharacterService
             $char->videoSpecial,
             $char->markerOrientation ?: 'stand',
             $char->greenscreen ?? false,
-            $char->scaleMultiplier
+            $char->scaleMultiplier,
+            $char->markerWidth,
+            $char->markerHeight
         );
     }
 
@@ -159,6 +161,11 @@ class CharacterService
         }
         if (!is_finite($dto->scaleMultiplier) || $dto->scaleMultiplier < 0.1 || $dto->scaleMultiplier > 10.0) {
             throw new ValidationException("Scale multiplier must be between 0.1 and 10.0.", 400);
+        }
+        if (!is_finite($dto->markerWidth) || !is_finite($dto->markerHeight)
+            || $dto->markerWidth <= 0 || $dto->markerHeight <= 0
+            || $dto->markerWidth > 5 || $dto->markerHeight > 5) {
+            throw new ValidationException("Marker dimensions must be between 0 and 5 metres.", 400);
         }
 
         $nameExists = $this->repository->getByName($dto->name);
@@ -304,7 +311,9 @@ class CharacterService
                     $dto->characterType === 'VIDEO' ? ($specialUpload['path'] ?? $existingChar->videoSpecial) : null,
                     $dto->markerOrientation ?: 'stand',
                     $dto->greenscreen ?? false,
-                    $dto->scaleMultiplier
+                    $dto->scaleMultiplier,
+                    $dto->markerWidth,
+                    $dto->markerHeight
                 );
 
                 $this->repository->update($updatedChar);
@@ -328,7 +337,9 @@ class CharacterService
                     $specialUpload['path'] ?? null,
                     $dto->markerOrientation ?: 'stand',
                     $dto->greenscreen ?? false,
-                    $dto->scaleMultiplier
+                    $dto->scaleMultiplier,
+                    $dto->markerWidth,
+                    $dto->markerHeight
                 );
 
                 $this->repository->create($newChar);

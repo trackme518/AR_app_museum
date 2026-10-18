@@ -73,7 +73,9 @@ class ScenarioService
                 $char->videoSpecial,
                 $char->markerOrientation ?: 'stand',
                 $char->greenscreen ?? false,
-                $char->scaleMultiplier
+                $char->scaleMultiplier,
+                $char->markerWidth,
+                $char->markerHeight
             );
         }, $characterEntities);
 

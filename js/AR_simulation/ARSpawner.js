@@ -59,9 +59,25 @@ export class ARSpawner {
                 img.crossOrigin = 'anonymous';
                 await img.decode();
                 const bitmap = await createImageBitmap(img);
+                const markerWidth = Number(char.markerWidth ?? char.marker_width ?? 0.210);
+                const markerHeight = Number(char.markerHeight ?? char.marker_height ?? 0.210);
+                const effectiveWidth = Number.isFinite(markerWidth) && markerWidth > 0
+                    ? markerWidth
+                    : 0.210;
+                const bitmapHeightInMeters = effectiveWidth * (bitmap.height / bitmap.width);
+                if (Number.isFinite(markerHeight) && markerHeight > 0
+                    && Math.abs(bitmapHeightInMeters - markerHeight) / markerHeight > 0.05) {
+                    console.warn(
+                        `Marker dimensions for ${char.name} do not match the uploaded image aspect ratio; `
+                        + `WebXR will derive a height of ${bitmapHeightInMeters.toFixed(3)} m from its width.`
+                    );
+                }
                 return {
                     image: bitmap,
-                    widthInMeters: 0.25,
+                    // WebXR derives marker height from this width and the image
+                    // bitmap's aspect ratio. markerHeight is retained as curator
+                    // metadata because the current API accepts width only.
+                    widthInMeters: effectiveWidth,
                 };
             })
         );

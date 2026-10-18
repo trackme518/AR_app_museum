@@ -84,7 +84,9 @@ class CharacterController extends AbstractController
             greenscreen: isset($data['greenscreen']) && $data['greenscreen'] === true,
             sourceLocale: isset($data['source_locale']) && is_string($data['source_locale'])
                 ? $data['source_locale'] : null,
-            scaleMultiplier: (float)($data['scale_multiplier'] ?? 1.0)
+            scaleMultiplier: (float)($data['scale_multiplier'] ?? 1.0),
+            markerWidth: (float)($data['marker_width'] ?? 0.210),
+            markerHeight: (float)($data['marker_height'] ?? 0.210)
         );
 
         try {

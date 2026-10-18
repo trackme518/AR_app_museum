@@ -97,6 +97,9 @@ try {
 
         $safeKey = preg_replace('/[^a-z0-9_-]/i', '_', (string)$key);
         $markerSource = bundledPath((string)($character['marker'] ?? ''));
+        $markerDimensions = $character['marker_dimensions'] ?? [];
+        $markerWidth = (float)($markerDimensions['width_m'] ?? 0.210);
+        $markerHeight = (float)($markerDimensions['height_m'] ?? 0.210);
         $markerExtension = strtolower(pathinfo($markerSource, PATHINFO_EXTENSION));
         $markerPath = copyBundledFile($markerSource, 'markers', "default_{$safeKey}.{$markerExtension}");
         // Use the same translation pipeline as curator-created characters.
@@ -116,6 +119,7 @@ try {
                 'markerOrientation' => 'stand',
                 'greenscreen' => 0,
                 'scaleMultiplier' => (float)($asset['scale_multiplier'] ?? 1.0),
+                'markerWidth' => $markerWidth, 'markerHeight' => $markerHeight,
             ];
             continue;
         }
@@ -139,6 +143,7 @@ try {
             'markerOrientation' => 'stand',
             'greenscreen' => isset($asset['greenscreen']) && $asset['greenscreen'] === true ? 1 : 0,
             'scaleMultiplier' => (float)($asset['scale_multiplier'] ?? 1.0),
+            'markerWidth' => $markerWidth, 'markerHeight' => $markerHeight,
         ];
     }
 
@@ -181,8 +186,9 @@ try {
     $insertCharacter = $db->prepare(
         'INSERT INTO characters
          (name, description, intro, intro_translations, media, typeOfMedia, marker, createdBy,
-          anim_idle, anim_talk, anim_special, video_talk, video_special, markerOrientation, greenscreen, scaleMultiplier)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          anim_idle, anim_talk, anim_special, video_talk, video_special, markerOrientation, greenscreen,
+          scaleMultiplier, markerWidth, markerHeight)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $linkCharacter = $db->prepare('INSERT INTO scenario_character (scenario_id, character_id) VALUES (?, ?)');
     foreach ($preparedCharacters as $character) {
@@ -195,6 +201,8 @@ try {
             $character['markerOrientation'] ?? 'stand',
             $character['greenscreen'] ?? 0,
             $character['scaleMultiplier'] ?? 1.0,
+            $character['markerWidth'] ?? 0.210,
+            $character['markerHeight'] ?? 0.210,
         ]);
         $linkCharacter->execute([$programId, (int)$db->lastInsertId()]);
     }

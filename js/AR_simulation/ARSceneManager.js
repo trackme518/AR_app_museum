@@ -13,6 +13,7 @@ export class ARSceneManager {
         this.hitTestSource = null;
         this.hitTestPose = null;
         this.referenceSpace = null;
+        this.sessionSelectHandler = null;
 
         this.anchorGroups = [];
         this.videos = [];
@@ -44,7 +45,6 @@ export class ARSceneManager {
 
         // Initialize XR controller for interaction
         this.controller = this.renderer.xr.getController(0);
-        this.controller.addEventListener('select', () => this.handleSelect());
         this.scene.add(this.controller);
 
         // Handle viewport changes
@@ -71,7 +71,7 @@ export class ARSceneManager {
         const sessionOptions = {
             // Marker-based placement requires image tracking to be enabled.
             requiredFeatures: ['image-tracking'],
-            optionalFeatures: ['dom-overlay', 'hit-test'],
+            optionalFeatures: ['dom-overlay', 'hit-test', 'anchors'],
             domOverlay: { root: document.body },
         };
         if (trackedImages.length > 0) sessionOptions.trackedImages = trackedImages;
@@ -160,6 +160,8 @@ export class ARSceneManager {
             }
         });
         const session = this.renderer.xr.getSession();
+        this.sessionSelectHandler = (event) => this.handleSelect(event.frame);
+        session.addEventListener('select', this.sessionSelectHandler);
         this.referenceSpace = this.renderer.xr.getReferenceSpace();
         this.referenceSpace?.addEventListener('reset', () => this.resetPlacements(), { once: true });
         try {
@@ -194,11 +196,12 @@ export class ARSceneManager {
         this.hitTestSource?.cancel();
         this.hitTestSource = null;
         this.hitTestPose = null;
+        this.sessionSelectHandler = null;
         this.referenceSpace = null;
         this.resetPlacements();
     }
 
-    handleSelect() {
+    handleSelect(frame) {
         // Abort selection if UI is locked
         if (!this.isSelectionEnabled) return;
 
@@ -211,12 +214,22 @@ export class ARSceneManager {
                 group.userData.markerIndex === null && !group.userData.placed
             );
             if (markerlessGroup) {
-                const pose = this.hitTestPose.transform;
+                let hitResult = null;
+                if (frame && this.hitTestSource) {
+                    hitResult = frame.getHitTestResults(this.hitTestSource)[0] ?? null;
+                }
+                const currentPose = hitResult?.getPose(this.renderer.xr.getReferenceSpace());
+                const pose = (currentPose ?? this.hitTestPose).transform;
                 markerlessGroup.position.copy(pose.position);
                 markerlessGroup.quaternion.copy(pose.orientation);
-                // WebXR hit-test poses are already upright; no correction needed.
                 markerlessGroup.visible = true;
                 markerlessGroup.userData.placed = true;
+
+                // A hit-test anchor remains attached to the detected physical
+                // surface as ARCore refines its world map.
+                if (hitResult && typeof hitResult.createAnchor === 'function') {
+                    this.createSpatialAnchor(markerlessGroup, () => hitResult.createAnchor());
+                }
             }
         }
     }
@@ -267,6 +280,10 @@ export class ARSceneManager {
         anchorGroup.userData.markerIndex = markerIndex;
         anchorGroup.userData.isBillboard = isVideo;
         anchorGroup.userData.placed = false;
+        anchorGroup.userData.anchor = null;
+        anchorGroup.userData.anchorPending = false;
+        anchorGroup.userData.anchorFailed = false;
+        anchorGroup.userData.anchorGeneration = 0;
         this.scene.add(anchorGroup);
         this.anchorGroups.push(anchorGroup);
         
@@ -285,6 +302,7 @@ export class ARSceneManager {
         // Process AR tracking data if available
         if (frame) {
             this.updateHitTest(frame);
+            this.updateAnchors(frame);
             if (typeof frame.getImageTrackingResults === 'function') {
                 this.updateImageTracking(frame);
             }
@@ -301,6 +319,9 @@ export class ARSceneManager {
         for (const result of results) {
             const anchorGroup = this.anchorGroups.find(g => g.userData.markerIndex === result.index);
             if (!anchorGroup) continue;
+
+            // Once created, the spatial anchor owns the character transform.
+            if (anchorGroup.userData.anchor) continue;
 
             const isTracked = result.trackingState === 'tracked';
             const isEmulated = result.trackingState === 'emulated';
@@ -321,7 +342,60 @@ export class ARSceneManager {
             anchorGroup.visible = true;
             anchorGroup.userData.placed = true;
             anchorGroup.userData.trackingState = result.trackingState;
+
+            // Create the anchor only from a real marker observation, never from
+            // an emulated pose. Continue displaying the image pose while the
+            // asynchronous anchor request is pending or unsupported.
+            if (isTracked
+                && !anchorGroup.userData.anchorPending
+                && !anchorGroup.userData.anchorFailed
+                && typeof frame.createAnchor === 'function') {
+                this.createSpatialAnchor(
+                    anchorGroup,
+                    () => frame.createAnchor(pose.transform, referenceSpace)
+                );
+            }
         }
+    }
+
+    createSpatialAnchor(group, createAnchor) {
+        group.userData.anchorPending = true;
+        const generation = group.userData.anchorGeneration;
+        let anchorPromise;
+        try {
+            anchorPromise = createAnchor();
+        } catch (error) {
+            group.userData.anchorPending = false;
+            group.userData.anchorFailed = true;
+            console.warn('Spatial anchor creation is unavailable; retaining reference-space placement:', error);
+            return;
+        }
+        Promise.resolve(anchorPromise).then((anchor) => {
+            if (group.userData.anchorGeneration !== generation) {
+                anchor.delete?.();
+                return;
+            }
+            group.userData.anchorPending = false;
+            group.userData.anchor = anchor;
+        }).catch((error) => {
+            if (group.userData.anchorGeneration !== generation) return;
+            group.userData.anchorPending = false;
+            group.userData.anchorFailed = true;
+            console.warn('Spatial anchor creation failed; retaining reference-space placement:', error);
+        });
+    }
+
+    updateAnchors(frame) {
+        const referenceSpace = this.renderer.xr.getReferenceSpace();
+        this.anchorGroups.forEach((group) => {
+            const anchor = group.userData.anchor;
+            if (!anchor) return;
+            const pose = frame.getPose(anchor.anchorSpace, referenceSpace);
+            if (!pose) return;
+            group.position.copy(pose.transform.position);
+            group.quaternion.copy(pose.transform.orientation);
+            group.visible = true;
+        });
     }
 
     updateHitTest(frame) {
@@ -334,6 +408,11 @@ export class ARSceneManager {
 
     resetPlacements() {
         this.anchorGroups.forEach((group) => {
+            group.userData.anchorGeneration++;
+            group.userData.anchor?.delete?.();
+            group.userData.anchor = null;
+            group.userData.anchorPending = false;
+            group.userData.anchorFailed = false;
             group.visible = false;
             group.userData.placed = false;
         });
@@ -370,6 +449,8 @@ export class ARSceneManager {
     clearScene() {
         // Safely dispose all materials and geometries to prevent memory leaks
         this.anchorGroups.forEach(group => {
+            group.userData.anchorGeneration++;
+            group.userData.anchor?.delete?.();
             this.scene.remove(group);
             group.traverse(child => {
                 if (child.geometry) child.geometry.dispose();

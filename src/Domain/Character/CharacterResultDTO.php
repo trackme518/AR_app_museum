@@ -34,7 +34,9 @@ class CharacterResultDTO
         public ?string $videoSpecial = null,
         public ?string $markerOrientation = 'stand',
         public bool $greenscreen = false,
-        public float $scaleMultiplier = 1.0
+        public float $scaleMultiplier = 1.0,
+        public float $markerWidth = 0.210,
+        public float $markerHeight = 0.210
     ) {
     }
 }

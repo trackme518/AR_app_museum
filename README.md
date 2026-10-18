@@ -63,7 +63,7 @@ Operational notes:
   limits but issues certificates browsers do not trust. Turn it off for
   production.
 
-Markers are plain uploaded images (JPG/PNG/WebP). They are passed directly to the WebXR runtime as tracked images at session start; no target preprocessing is required.
+Markers are plain uploaded images (JPG/PNG/WebP). They are passed directly to the WebXR runtime as tracked images at session start; no target preprocessing is required. Character settings store the printed marker width and height in metres, defaulting to `0.210 × 0.210` for a square marker fitted to portrait A4. WebXR currently accepts the physical width and derives height from the uploaded image's aspect ratio, so the configured dimensions should match that ratio. When supported, marker and markerless placements use WebXR spatial anchors; unsupported runtimes fall back to reference-space placement.
 
 ## Default data provisioning
 
