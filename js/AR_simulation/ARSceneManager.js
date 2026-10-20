@@ -21,11 +21,26 @@ export class ARSceneManager {
         this.clock = new THREE.Clock();
 
         this.isSelectionEnabled = true;
+        this.suppressSelectUntil = 0;
         
         this.init();
     }
 
     init() {
+        // UI taps can also emit an XR select event. Suppress the resulting
+        // raycast so closing/using the chat overlay cannot reselect a
+        // character behind it.
+        const uiSelector = '#ai-container, #keyboard-wrapper, #exit-ar-btn, #ARButton, #scenario-select-wrapper';
+        const isUiTarget = (target) => target instanceof Element && Boolean(target.closest(uiSelector));
+        document.addEventListener('pointerdown', (event) => {
+            if (isUiTarget(event.target)) {
+                this.suppressSelectUntil = performance.now() + 400;
+            }
+        }, true);
+        document.addEventListener('beforexrselect', (event) => {
+            if (isUiTarget(event.target)) event.preventDefault();
+        }, true);
+
         // Setup base ThreeJS scene and camera
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -58,7 +73,11 @@ export class ARSceneManager {
         this.renderer.setAnimationLoop((timestamp, frame) => this.render(timestamp, frame));
         
         // Bind session events
-        this.renderer.xr.addEventListener('sessionstart', () => this.onSessionStart());
+        this.renderer.xr.addEventListener('sessionstart', () => {
+            this.onSessionStart().catch((error) => {
+                console.error('AR session initialization failed:', error);
+            });
+        });
         this.renderer.xr.addEventListener('sessionend', () => this.onSessionEnd());
     }
 
@@ -163,7 +182,10 @@ export class ARSceneManager {
         this.sessionSelectHandler = (event) => this.handleSelect(event.frame);
         session.addEventListener('select', this.sessionSelectHandler);
         this.referenceSpace = this.renderer.xr.getReferenceSpace();
-        this.referenceSpace?.addEventListener('reset', () => this.resetPlacements(), { once: true });
+        // Some iOS WebXR runtimes provide reference spaces without EventTarget methods.
+        if (typeof this.referenceSpace?.addEventListener === 'function') {
+            this.referenceSpace.addEventListener('reset', () => this.resetPlacements(), { once: true });
+        }
         try {
             const viewerSpace = await session.requestReferenceSpace('viewer');
             this.hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
@@ -202,6 +224,8 @@ export class ARSceneManager {
     }
 
     handleSelect(frame) {
+        // Ignore the XR select that follows a tap on app UI.
+        if (performance.now() < this.suppressSelectUntil) return;
         // Abort selection if UI is locked
         if (!this.isSelectionEnabled) return;
 
