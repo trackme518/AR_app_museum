@@ -102,9 +102,9 @@ export class ARSceneManager {
             // Marker-based placement requires image tracking to be enabled.
             requiredFeatures: ['image-tracking'],
             optionalFeatures: ['dom-overlay', 'hit-test', 'anchors'],
-            // Keep the HTML HUD separate from the renderer canvas, which is
-            // attached to document.body and rendered through the XR layer.
-            domOverlay: { root: document.getElementById('ar-container') },
+            // Launchar emulates overlays by hiding body children outside the root.
+            // Using body keeps it from hiding <main>, which contains our AR HUD.
+            domOverlay: { root: document.body },
         };
         if (trackedImages.length > 0) sessionOptions.trackedImages = trackedImages;
         const arBtn = ARButton.createButton(this.renderer, sessionOptions);

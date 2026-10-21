@@ -175,6 +175,11 @@ export class ChatController {
     }
 
     async prepareMicrophone() {
+        // The Launch viewer exposes getUserMedia but lacks the native microphone
+        // usage declaration. Requesting access terminates the App Clip (TCC).
+        // Match the viewer's own SDK detection, not the SDK's presence in Safari.
+        if (navigator.userAgent.includes('Variant Launch')) return false;
+
         if (!this.recognition || this.microphoneChecked) {
             return this.microphoneReady;
         }
