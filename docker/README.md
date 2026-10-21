@@ -1,22 +1,22 @@
 # Docker deployment
 
-The deployment consists of two Compose stacks that share one external Docker
-network:
+The deployment consists of one Compose stack:
 
 - **App stack** (`docker/compose.yaml`): Apache with PHP 8.3 and MariaDB 11.8
   LTS. MariaDB stores both application data and native RAG vectors; no
-  additional vector server is required. The app service also carries Traefik
-  labels, so it can be routed by an already-running, label-driven Traefik
-  (see "Routing via an existing Traefik" below).
-- **Edge stack** (`docker/edge/compose.yaml`): Traefik, which terminates TLS
-  and routes traffic to the app container.
+  additional vector server is required.
+- **TLS/routing**: not managed by this repository. On a VPS, an existing
+  label-driven Traefik terminates TLS and routes to the app container. For
+  local phone testing, a Caddy overlay provides HTTPS with a local CA.
 
 ```text
-internet / LAN ──> traefik :80/:443 ──https──> app :80 (internal network)
-                                    └─ acme DNS-01 ──> your DNS provider
+VPS:    internet ──> existing Traefik :443 ──> app :80
+Local:  phone/LAN ──> Caddy :443 (internal CA) ──> app :80
 ```
 
 ## One-time network setup
+
+The app joins the external `proxy` network so a reverse proxy can reach it:
 
 ```bash
 docker network create proxy
@@ -24,8 +24,9 @@ docker network create proxy
 
 ## Generating strong passwords
 
-The `MARIADB_PASSWORD` (the app account the PHP application connects with) and `MARIADB_ROOT_PASSWORD` (the database
-superuser) values in `.env` must be strong. Generate them with:
+The `MARIADB_PASSWORD` (the app account the PHP application connects with) and
+`MARIADB_ROOT_PASSWORD` (the database superuser) values in `.env` must be
+strong. Generate them with:
 
 ```bash
 openssl rand -hex 24
@@ -34,41 +35,26 @@ openssl rand -hex 24
 (`openssl rand -base64 24` also works; use `-hex` if you want to avoid `/` and
 `+` characters in the value.)
 
-## HTTPS via Let's Encrypt DNS-01
+## Production VPS: existing label-driven Traefik
 
-Certificates are issued for `APP_HOSTNAME` using the **DNS-01 ACME challenge**:
-the server creates a temporary `_acme-challenge` TXT record through your DNS
-provider's API, so **the server never needs to be reachable from the internet**
-to obtain or renew a certificate. The same setup therefore serves both:
+The app service in `docker/compose.yaml` carries Traefik labels:
 
-- **Public VPS**: point the A record of `APP_HOSTNAME` at the server's public IP.
-- **Private/museum LAN**: point the same A record at the server's LAN address
-  (e.g. `10.0.0.30`). Visitors on that network resolve the name locally; the
-  certificate remains browser-trusted. Switching deployment targets is just an
-  A-record edit (keep the TTL short, e.g. 60 s).
-
-Configure `.env`:
-
-```dotenv
-APP_HOSTNAME=arapp.example.com
-ACME_EMAIL=admin@example.com
-ACME_STAGING=false
-LEGODNS_PROVIDER=wedos
-WEDOS_USERNAME=...
-WEDOS_WAPI_PASSWORD=...
+```yaml
+labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.ar-museum.rule=Host(`${APP_HOSTNAME}`)"
+  - "traefik.http.routers.ar-museum.entrypoints=websecure"
+  - "traefik.http.routers.ar-museum.tls.certresolver=letsencrypt"
+  - "traefik.http.services.ar-museum.loadbalancer.server.port=80"
 ```
 
-`LEGODNS_PROVIDER` accepts any [lego DNS provider](https://go-acme.github.io/lego/dns/)
-name (cloudflare, hetzner, powerdns, ...) together with that provider's own
-credential variables. `manual` waits for you to create the TXT record yourself.
-For WEDOS, generate the WAPI password in the WEDOS administration and add the
-server's **public IP** to the WAPI allow-list there.
+The host's Traefik must already have `providers.docker=true`,
+`providers.docker.exposedbydefault=false`, the `web`/`websecure` entrypoints,
+and a certificate resolver named `letsencrypt`. Certificate issuance and
+renewal are managed entirely by that Traefik instance.
 
-Set `ACME_STAGING=true` while testing: Let's Encrypt's staging CA issues
-throwaway certificates without strict rate limits. Never leave it on in
-production.
-
-## Starting the stacks
+Set only `APP_HOSTNAME` in `.env`; the application does not read ACME or
+DNS-provider credentials. Point the hostname's A record at the server.
 
 The app image is published to **`ghcr.io/trackme518/ar_museum-app`** (tags:
 `latest` and `sha-<commit>`, architectures `amd64` and `arm64`) by the
@@ -81,71 +67,54 @@ docker compose --env-file .env -f docker/compose.yaml pull app
 docker compose --env-file .env -f docker/compose.yaml up -d
 ```
 
-For local development, `build.sh` builds the image from source instead
-(`--build`). Pin a server to a known-good build by setting the app service's
-`image:` tag to the corresponding `sha-<commit>` tag.
+To build from source instead, run `./build.sh` from the repository root. Pin a
+server to a known-good build by setting the app service's `image:` tag to the
+corresponding `sha-<commit>` tag.
+
+Hosting-panel deployments can use `docker/hostinger/compose.hostinger.yaml`
+instead; it is the same app stack with variables supplied by the panel. Copy
+`docker/hostinger/environment.hostinger.example.txt` to the panel's
+environment/secrets field.
+
+## Local Docker with HTTPS (Caddy)
+
+WebXR requires a trusted secure context.
+
+The LAN setup adds a Caddy container under the gitignored
+`uploads/knowledge/.local-https/` directory. The full file contents, startup
+command, and Android CA-certificate steps are in the main README section
+"Local Docker with HTTPS (Caddy)".
+
+Short version:
 
 ```bash
-# app (also runs ./build.sh for you)
-./build.sh
-
-# edge (TLS)
-docker compose --env-file .env -f docker/edge/compose.yaml up -d
-docker compose --env-file .env -f docker/edge/compose.yaml logs traefik
+docker compose --env-file .env \
+  -f docker/compose.yaml \
+  -f uploads/knowledge/.local-https/compose.yaml \
+  up --build -d
 ```
 
-On the first request Traefik requests the certificate and shows its own
-self-signed fallback until issuance completes (usually under a minute). Only
-Traefik publishes host ports; the app and MariaDB stay on internal networks.
-HTTP is permanently redirected to HTTPS.
+The app is served at `https://$LOCAL_HTTPS_HOST/` (default `10.0.0.30`).
+Caddy's root CA is written to
+`uploads/knowledge/.local-https/data/caddy/pki/authorities/local/root.crt`;
+install it on the phone before testing WebXR.
 
-## Routing via an existing Traefik (label mode)
+Stop without deleting data:
 
-If the server already runs a **label-driven Traefik** — e.g. deployed through
-a hosting panel, configured with `--providers.docker=true` and
-`--providers.docker.exposedbydefault=false` — the app can use it instead of
-the edge stack above. The `app` service in `docker/compose.yaml` carries the
-necessary labels:
-
-```yaml
-labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.ar-museum.rule=Host(`${APP_HOSTNAME}`)"
-  - "traefik.http.routers.ar-museum.entrypoints=websecure"
-  - "traefik.http.routers.ar-museum.tls.certresolver=letsencrypt"
-  - "traefik.http.services.ar-museum.loadbalancer.server.port=80"
+```bash
+docker compose --env-file .env \
+  -f docker/compose.yaml \
+  -f uploads/knowledge/.local-https/compose.yaml \
+  down
 ```
 
-In this mode:
+## Volumes
 
-- **Do not deploy `docker/edge/compose.yaml`** on that server — one Traefik
-  must own ports 80/443.
-- The existing Traefik must expose `web`/`websecure` entrypoints and a
-  certificate resolver named `letsencrypt` (HTTP-01 is fine on a public VPS;
-  point the `APP_HOSTNAME` A record at the server's public IP).
-- The Traefik must be able to reach the app container's IP: host-network
-  Traefik can reach any Docker network; bridge-attached Traefik must also be
-  connected to the shared `proxy` network.
-- The labels are ignored by this repo's own edge stack (it uses a file
-  provider), so both deployment modes work from the same compose file.
-- DNS-01/`LEGODNS_*` variables are not used in this mode; TLS is managed by
-  the existing Traefik.
+- `ar_museum_mariadb_data` — database and RAG vectors
+- `ar_museum_uploads_data` — media, markers, knowledge documents
 
-## Renewals, rate limits, and volumes
-
-Traefik renews certificates automatically about 30 days before expiry;
-renewal only needs outbound HTTPS to your DNS provider and Let's Encrypt.
-Let's Encrypt enforces **5 certificates per week per hostname**, so the ACME
-state must survive redeploys:
-
-- App stack volumes: `ar_museum_mariadb_data` (database + RAG vectors) and
-  `ar_museum_uploads_data` (media, markers, knowledge documents).
-- Edge stack volume: `ar_museum_edge_letsencrypt_data` (ACME account and
-  certificates).
-
-`docker compose down -v` on the **app stack** never touches the edge volume.
-Only reset the edge volume deliberately (or while `ACME_STAGING=true`),
-otherwise every reset triggers a fresh certificate request.
+`docker compose down -v` erases both. Use `down` without `-v` for normal
+redeploys.
 
 When the application first connects to an empty database it creates the schema
 itself (`docker/schema.sql`, applied by `src/Database.php`); the default
@@ -176,10 +145,13 @@ dedicated embedding model in LM Studio and update `EMBEDDING_MODEL` accordingly.
 ## AR Runtime (WebXR)
 
 The application uses standard WebXR only; no AR engine is bundled or installed in
-Docker. Android Chrome works natively. For iOS you need a third-party WebXR
-compatibility layer such as [Launchar](https://launchar.app), which is **not part
-of this codebase** — register at launchar.app and set `LAUNCHAR_APP_KEY` in
-`APP/.env` (see the main README). Without a key, iOS devices fall back to the QR
-launcher screen. Speech recognition and speech synthesis run in the browser
-through the Web Speech API; no separate speech API key or server audio endpoint
-is needed.
+Docker. On Android, WebXR image tracking must be enabled: open
+`chrome://flags/#webxr-incubations`, set it to **Enabled**, and relaunch Chrome.
+A Canary APK with the native-keyboard flicker fix is linked from the main README.
+
+For iOS you need a third-party WebXR compatibility layer such as
+[Launchar](https://launchar.app), which is **not part of this codebase** —
+register at launchar.app and set `LAUNCHAR_APP_KEY` in `.env`. Without a key,
+iOS devices fall back to the QR launcher screen. Speech recognition and speech
+synthesis run in the browser through the Web Speech API; no separate speech API
+key or server audio endpoint is needed.

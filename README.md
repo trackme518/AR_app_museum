@@ -10,60 +10,122 @@ branch. This branch contains the subsequent development work.
 
 ## AR runtime
 
-The application uses standard **WebXR only** (`navigator.xr`): immersive AR sessions, image tracking when the runtime exposes it (it stays an optional feature, so AR still starts without it), and hit testing for markerless placement. Three.js and its AR button are bundled in `js/AR_simulation/three-bundle.js`; nothing is downloaded at runtime.
+The application uses standard **WebXR only** (`navigator.xr`): immersive AR sessions, **WebXR image tracking (required)**, and hit testing for markerless placement. Image tracking is requested as a required session feature, so AR cannot start on a runtime that does not expose it. Three.js and its AR button are bundled in `js/AR_simulation/three-bundle.js`; nothing is downloaded at runtime.
 
-- **Android**: Chrome on a WebXR-capable device works out of the box.
+- **Android**: Chrome on an ARCore/WebXR-capable device. Image tracking must be available in Chrome; enable `chrome://flags/#webxr-incubations` (set to **Enabled**) and fully relaunch Chrome before opening the app. Without this flag, `requestSession()` fails with `The session request contains invalid requiredFeatures`.
 - **iOS**: Safari does not implement WebXR. You must set up [Launchar](https://launchar.app) — or another WebXR compatibility layer for iOS — for yourself. Launchar is a **third-party product and not part of this codebase**; we provide no warranty or support for it. Register your app at launchar.app, put the issued key in `LAUNCHAR_APP_KEY` in `.env`, and the app will embed the Launchar SDK. On iOS the Start AR button then hands the user over to the Launchar Launch Card, which opens the page inside the Launchar viewer where WebXR is available and the normal AR flow starts. Leave `LAUNCHAR_APP_KEY` empty to disable the SDK entirely; unsupported browsers then fall back to the QR launcher screen.
 - Desktop remains a QR launcher rather than opening a camera session.
 
-Start the application:
+### Android: Chrome Canary for the keyboard flicker fix
+
+Native software-keyboard flickering in the WebXR dialogue is fixed in Chrome **158.0.8115.0 and newer**. This fix is currently available in Chrome Canary; a Canary APK is attached to the project's [GitHub Releases](https://github.com/trackme518/AR_app_museum/releases). Install it, enable `chrome://flags/#webxr-incubations`, and relaunch Chrome. The fix is expected to reach the stable Chrome release eventually.
+
+### Image markers
+
+Markers are plain uploaded images (JPG/PNG/WebP). They are passed directly to the WebXR runtime as tracked images at session start; no target preprocessing is required. Character settings store the printed marker width and height in metres, defaulting to `0.210 × 0.210` for a square marker fitted to portrait A4. WebXR currently accepts the physical width and derives height from the uploaded image's aspect ratio, so the configured dimensions should match that ratio. When supported, marker and markerless placements use WebXR spatial anchors; unsupported runtimes fall back to reference-space placement.
+
+## Running locally and in production
 
 ```sh
 ./build.sh
 ```
 
-`build.sh` first generates any missing UI translations and then builds and starts the application stack (app + MariaDB). TLS runs in a separate Traefik edge stack; see [docker/README.md](docker/README.md) for the two-stack setup and HTTPS deployment, or the label-mode variant there if the server already runs its own Traefik.
+`build.sh` generates any missing UI translations, then builds and starts the app stack (app + MariaDB). HTTPS is not managed by the app stack.
 
-## HTTPS
+### VPS: existing label-driven Traefik
 
-Certificates come from Let's Encrypt via the **DNS-01 challenge**, so one
-universal setup covers both a public VPS and a private museum LAN: set
-`APP_HOSTNAME` to your domain and point its A record at the server — the
-public IP when online, the LAN address when private (a short TTL, e.g. 60 s,
-makes switching quick). No certificate files, local CAs, or reachable ports
-are involved; the browser trusts the certificate because it is a normal
-Let's Encrypt certificate for your hostname.
+The app service in `docker/compose.yaml` carries Traefik labels and joins the external `proxy` network. The server's existing label-driven Traefik must already expose the `web`/`websecure` entrypoints and a certificate resolver named `letsencrypt`; this repository does not manage certificates for the VPS.
 
-### Why DNS provider credentials are needed
+- Set `APP_HOSTNAME` in `.env` to the public hostname.
+- No ACME or DNS-provider credentials are read by the application. Certificate issuance and renewal belong to the host's Traefik configuration.
+- Deploy the published image:
 
-To prove you control the hostname, Let's Encrypt requires a temporary
-`_acme-challenge.<hostname>` **TXT record** inside your domain's DNS zone.
-Only your DNS provider can write to that zone, so Traefik creates and removes
-the record automatically through the provider's **API** — that is what the
-credentials in `.env` are for. This matters beyond the first issuance:
-certificates are valid 90 days and renew **unattended roughly every 60 days**,
-forever. Without API access (`LEGODNS_PROVIDER=manual`), Traefik logs the TXT
-value and waits — a person must add it by hand at every issuance *and* every
-renewal, which defeats the purpose.
+```sh
+docker network create proxy   # once
+docker compose --env-file .env -f docker/compose.yaml pull app
+docker compose --env-file .env -f docker/compose.yaml up -d
+```
 
-The provider is selected generically with `LEGODNS_PROVIDER`; the credential
-variable names are fixed by [lego, Traefik's ACME client](https://go-acme.github.io/lego/dns/)
-and differ per provider (e.g. `WEDOS_USERNAME`/`WEDOS_WAPI_PASSWORD` for WEDOS,
-`CF_DNS_API_TOKEN` for Cloudflare). Configure the pair for your provider as
-documented there — `.env.example` lists the common ones.
+Hosting-panel deployments can use `docker/hostinger/compose.hostinger.yaml` instead; it is the same app stack with variables supplied by the panel. Copy `docker/hostinger/environment.hostinger.example.txt` to the panel's environment/secrets field.
 
-Operational notes:
+### Local Docker with HTTPS (Caddy)
 
-- The server needs **outbound** internet (DNS provider API + Let's Encrypt) at
-  issuance/renewal time; it never needs to be reachable from the outside.
-- Let's Encrypt allows **5 certificate requests per hostname per week**.
-  The ACME state lives in the edge stack's `letsencrypt_data` volume, so keep
-  it across redeploys (never `down -v` the edge stack).
-- Use `ACME_STAGING=true` while testing: the staging CA has no strict rate
-  limits but issues certificates browsers do not trust. Turn it off for
-  production.
+WebXR requires a secure context, so an HTTP-only URL is not enough for a phone. The current LAN setup adds a local Caddy container that terminates HTTPS with its own internal CA and proxies to the app container.
 
-Markers are plain uploaded images (JPG/PNG/WebP). They are passed directly to the WebXR runtime as tracked images at session start; no target preprocessing is required. Character settings store the printed marker width and height in metres, defaulting to `0.210 × 0.210` for a square marker fitted to portrait A4. WebXR currently accepts the physical width and derives height from the uploaded image's aspect ratio, so the configured dimensions should match that ratio. When supported, marker and markerless placements use WebXR spatial anchors; unsupported runtimes fall back to reference-space placement.
+These files live under `uploads/knowledge/.local-https/`, which is gitignored and not part of the published image. Create them if they do not exist.
+
+`uploads/knowledge/.local-https/Caddyfile`:
+
+```caddyfile
+{
+	auto_https disable_redirects
+	default_sni {$LOCAL_HTTPS_HOST:10.0.0.30}
+}
+
+https://{$LOCAL_HTTPS_HOST:10.0.0.30} {
+	tls internal
+	reverse_proxy app:80
+}
+```
+
+`uploads/knowledge/.local-https/compose.yaml`:
+
+```yaml
+services:
+  caddy-local:
+    image: caddy:2.11.4-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      LOCAL_HTTPS_HOST: "${LOCAL_HTTPS_HOST:-10.0.0.30}"
+    ports:
+      - "0.0.0.0:443:443"
+      - "0.0.0.0:443:443/udp"
+    volumes:
+      - ../uploads/knowledge/.local-https/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../uploads/knowledge/.local-https/data:/data
+      - ../uploads/knowledge/.local-https/config:/config
+    networks:
+      - backend
+      - proxy
+
+networks:
+  proxy:
+    external: true
+```
+
+Set `LOCAL_HTTPS_HOST` in `.env` if the LAN address is not `10.0.0.30`, then start the stack from the repository root:
+
+```sh
+docker network create proxy   # once
+docker compose --env-file .env \
+  -f docker/compose.yaml \
+  -f uploads/knowledge/.local-https/compose.yaml \
+  up --build -d
+```
+
+The app is then available at `https://10.0.0.30/`.
+
+After the first start, Caddy writes its root certificate to:
+
+```text
+uploads/knowledge/.local-https/data/caddy/pki/authorities/local/root.crt
+```
+
+Install that file on the Android phone as a CA certificate (Settings → Security → Encryption and credentials → Install a certificate → CA certificate; vendor menus differ), then restart Chrome. Bypassing the browser warning is not enough: WebXR still requires a trusted secure context.
+
+Stop the stack without deleting the database or uploads:
+
+```sh
+docker compose --env-file .env \
+  -f docker/compose.yaml \
+  -f uploads/knowledge/.local-https/compose.yaml \
+  down
+```
+
+Do not use `down -v` unless the database and uploads should be erased.
 
 ## Default data provisioning
 

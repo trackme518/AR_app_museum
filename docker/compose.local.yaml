@@ -1,7 +1,0 @@
-# Local-only override: exposes the app on the host so it can be opened in a
-# browser without the Traefik edge stack. Not used unless explicitly passed:
-#   docker compose --env-file .env -f docker/compose.yaml -f docker/compose.local.yaml up -d
-services:
-  app:
-    ports:
-      - "0.0.0.0:8090:80"

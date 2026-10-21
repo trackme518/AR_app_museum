@@ -1,8 +1,7 @@
 -- Initial schema for an empty AR Museum database.
 -- Applied by the application on first connection (see src/Database.php),
 -- only when the database contains no tables. Never run this against a
--- populated database; for a manual destructive reset use
--- help_files/setup_db.sql instead.
+-- populated database.
 
 CREATE TABLE roles (
     id INT AUTO_INCREMENT PRIMARY KEY,
