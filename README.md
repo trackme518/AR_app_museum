@@ -202,3 +202,12 @@ obsolete keys and locales, and asks the configured AI only for missing keys, in
 batches of 20. It checkpoints after every completed batch, so a later run resumes
 instead of retranslating completed work. Set `FORCE_TRANSLATION=true` in `.env` to
 ignore all existing translations and retranslate every string.
+
+## CD/CI
+The pipeline is configured to build new docker image and push to ghcr.io on each commit. It also iterates the version string automatically.
+
+To check the state of the build pipeline with this command:
+```
+gh run list --repo trackme518/AR_app_museum --workflow=docker-image.yml --limit 3
+```
+
