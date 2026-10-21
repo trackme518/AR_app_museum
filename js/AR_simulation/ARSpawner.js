@@ -33,13 +33,8 @@ export class ARSpawner {
         });
 
         this.arManager.renderer.xr.addEventListener('sessionend', () => {
-            document.getElementById('scenario-select-wrapper')?.classList.remove('hidden');
-            document.querySelector('header')?.classList.remove('hidden');
-            document.getElementById('exit-ar-btn')?.classList.add('hidden');
-            document.getElementById('ARButton')?.classList.remove('hidden');
-            
             this.clearAllIntervals();
-            window.location.reload(); 
+            // ARSceneManager reloads after XR teardown has finished.
         });
     }
 

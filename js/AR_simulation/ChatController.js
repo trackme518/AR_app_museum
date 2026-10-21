@@ -2,19 +2,6 @@ import { typewriterEffect } from './chatUtils.js';
 import { getCurrentLocale } from './languageConfig.js';
 import { t } from '../localization.js';
 
-const KEYBOARD_LAYOUTS = {
-    'en-US': ['q w e r t y u i o p', 'a s d f g h j k l', '{shift} z x c v b n m {bksp}', '{numbers} {space} {enter}'],
-    'de-DE': ['q w e r t z u i o p ü', 'a s d f g h j k l ö ä', '{shift} y x c v b n m ß {bksp}', '{numbers} {space} {enter}'],
-    'fr-FR': ['a z e r t y u i o p', 'q s d f g h j k l m', '{shift} w x c v b n é è ç à {bksp}', '{numbers} {space} {enter}'],
-    'cs-CZ': ['q w e r t z u i o p ú', 'a s d f g h j k l ů', '{shift} y x c v b n m č š ř ž ý á í é {bksp}', '{numbers} {space} {enter}'],
-    'es-ES': ['q w e r t y u i o p', 'a s d f g h j k l ñ', '{shift} z x c v b n m á é í ó ú ü {bksp}', '{numbers} {space} {enter}'],
-    'pl-PL': ['q w e r t y u i o p', 'a s d f g h j k l ł', '{shift} z x c v b n m ą ć ę ń ó ś ź ż {bksp}', '{numbers} {space} {enter}'],
-    'sk-SK': ['q w e r t z u i o p ú', 'a s d f g h j k l ô ä', '{shift} y x c v b n m č ď ľ ĺ ň š ť ž ý á í é {bksp}', '{numbers} {space} {enter}'],
-    'it-IT': ['q w e r t y u i o p', 'a s d f g h j k l', '{shift} z x c v b n m à è é ì ò ù {bksp}', '{numbers} {space} {enter}'],
-    'ja-JP': ['あ い う え お か き く け こ', 'さ し す せ そ た ち つ て と', 'な に ぬ ね の は ひ ふ へ ほ {bksp}', 'ま み む め も や ゆ よ ら り る れ ろ', 'わ を ん ゛ ゜ {numbers} {space} {enter}'],
-    'ko-KR': ['ㅂ ㅈ ㄷ ㄱ ㅅ ㅛ ㅕ ㅑ ㅐ ㅔ', 'ㅁ ㄴ ㅇ ㄹ ㅎ ㅗ ㅓ ㅏ ㅣ', '{shift} ㅋ ㅌ ㅊ ㅍ ㅠ ㅜ ㅡ {bksp}', '{numbers} {space} {enter}'],
-};
-
 export class ChatController {
     constructor(apiService, onCloseCallback) {
         this.apiService = apiService;
@@ -38,6 +25,8 @@ export class ChatController {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = SpeechRecognition ? new SpeechRecognition() : null;
         this.isListening = false;
+        this.microphoneReady = false;
+        this.microphoneChecked = false;
 
         if (!this.recognition && this.sttBtn) {
             this.sttBtn.style.display = 'none';
@@ -55,9 +44,9 @@ export class ChatController {
 
         this.setupListeners();
         this.updateTtsButton();
-        this.setupKeyboard();
+        this.setupNativeInput();
         window.addEventListener('ar-museum-locale-change', () => {
-            this.applyKeyboardLocale();
+            this.input.lang = getCurrentLocale();
             this.updateTtsButton();
         });
     }
@@ -78,6 +67,7 @@ export class ChatController {
     }
 
     close() {
+        this.input.blur();
         this.container.classList.add('hidden');
         window.speechSynthesis?.cancel();
         if (this.isListening) this.recognition.stop();
@@ -93,165 +83,68 @@ export class ChatController {
         }
         this.ttsToggleBtn?.addEventListener('click', () => this.toggleTts());
 
-        document.addEventListener('pointerdown', (event) => {
-            const keyboardWrapper = document.getElementById("keyboard-wrapper");
-            
-            if (keyboardWrapper && keyboardWrapper.style.display === "block") {
-                const path = event.composedPath();
-                
-                const isClickInsideKeyboard = path.includes(keyboardWrapper);
-                const isClickOnInput = path.includes(this.input);
-                
-                if (!isClickInsideKeyboard && !isClickOnInput) {
-                    this.hideKeyboard(keyboardWrapper);
-                }
-            }
-        });
     }
 
-    setupKeyboard() {
-        const Keyboard = window.SimpleKeyboard.default;
-        const keyboardWrapper = document.getElementById("keyboard-wrapper");
-        
-        this.keyboard = new Keyboard({
-            onChange: input => {
-                this.input.innerText = input === "" ? t('chat.placeholder') : input;
-            },
-            onKeyPress: button => this.handleKeyPress(button, keyboardWrapper),
-            layout: {
-                'default': [
-                    'q w e r t z u i o p',
-                    'a s d f g h j k l {acute}',
-                    '{shift} y x c v b n m {wedge} {bksp}',
-                    '{numbers} {space} {enter}'
-                ],
-                'shift': [
-                    'Q W E R T Z U I O P',
-                    'A S D F G H J K L {acute}',
-                    '{shift} Y X C V B N M {wedge} {bksp}',
-                    '{numbers} {space} {enter}'
-                ],
-                'numbers': [
-                    '1 2 3 4 5 6 7 8 9 0',
-                    '- + / * : ( ) & @ =',
-                    '. , ? ! {bksp}',
-                    '{abc} {space} {enter}'
-                ]
-            },
-            display: {
-                '{bksp}': '⌫',
-                '{enter}': t('chat.send'),
-                '{shift}': '⇧',
-                '{space}': ' ',
-                '{numbers}': '?123',
-                '{abc}': 'ABC',
-                '{wedge}': 'ˇ',
-                '{acute}': '´'
+    setupNativeInput() {
+        this.input.lang = getCurrentLocale();
+        this.isComposing = false;
+        this.input.addEventListener('compositionstart', () => { this.isComposing = true; });
+        this.input.addEventListener('compositionend', () => { this.isComposing = false; });
+        this.input.addEventListener('keydown', (event) => {
+            // Enter confirms IME candidates before it can send a message.
+            if (event.key === 'Enter' && !event.shiftKey && !event.isComposing
+                && !this.isComposing && event.keyCode !== 229) {
+                event.preventDefault();
+                this.handleTextSubmit();
             }
         });
-        this.applyKeyboardLocale();
 
-        this.input.addEventListener("click", (e) => {
-            e.preventDefault();
-            keyboardWrapper.style.display = "block";
-            this.input.disabled = true;
-            this.container.classList.add("keyboard-open");
-            
-            if (this.input.innerText === t('chat.placeholder')) {
-                this.input.innerText = "";
+        // Batch viewport events into the HTML rendering loop. Text editing can
+        // produce repeated events without changing the usable viewport.
+        let viewportUpdatePending = false;
+        let lastBottom = null;
+        let lastMaxHeight = null;
+        const updateViewport = () => {
+            viewportUpdatePending = false;
+            const viewport = window.visualViewport;
+            const height = viewport?.height ?? window.innerHeight;
+            const top = viewport?.offsetTop ?? 0;
+            // The fixed HUD is the containing block, including in XR overlay
+            // mode. Anchor to its bottom instead of translating by panel height.
+            const hudHeight = this.container.parentElement.clientHeight;
+            const bottom = Math.round(Math.max(0, hudHeight - top - height) + 12);
+            const maxHeight = Math.round(Math.max(0, height - 24));
+            if (bottom !== lastBottom) {
+                this.container.style.bottom = `${bottom}px`;
+                lastBottom = bottom;
             }
-        });
-    }
-
-    applyKeyboardLocale() {
-        if (!this.keyboard) return;
-        const layout = KEYBOARD_LAYOUTS[getCurrentLocale()] || KEYBOARD_LAYOUTS['en-US'];
-        this.keyboard.setOptions({
-            layoutName: 'default',
-            layout: {
-                default: layout,
-                shift: layout.map((row) => row.toLocaleUpperCase(getCurrentLocale())),
-                numbers: [
-                    '1 2 3 4 5 6 7 8 9 0',
-                    '- + / * : ( ) & @ =',
-                    '. , ? ! {bksp}',
-                    '{abc} {space} {enter}'
-                ],
-            },
-            display: { ...this.keyboard.options.display, '{enter}': t('chat.send') },
-        });
-    }
-
-    handleKeyPress(button, keyboardWrapper) {
-        const diacriticMap = {
-            '{wedge}': { 
-                map: { 'c': 'č', 'd': 'ď', 'e': 'ě', 'n': 'ň', 'r': 'ř', 's': 'š', 't': 'ť', 'z': 'ž', 'C': 'Č', 'D': 'Ď', 'E': 'Ě', 'N': 'Ň', 'R': 'Ř', 'S': 'Š', 'T': 'Ť', 'Z': 'Ž' }, 
-                symbol: 'ˇ' 
-            },
-            '{acute}': { 
-                map: { 'a': 'á', 'e': 'é', 'i': 'í', 'o': 'ó', 'u': 'ú', 'y': 'ý', 'A': 'Á', 'E': 'É', 'I': 'Í', 'O': 'Ó', 'U': 'Ú', 'Y': 'Ý' }, 
-                symbol: '´' 
+            if (maxHeight !== lastMaxHeight) {
+                this.container.style.maxHeight = `${maxHeight}px`;
+                lastMaxHeight = maxHeight;
             }
         };
-
-        if (button === "{wedge}" || button === "{acute}") {
-            let currentInput = this.keyboard.getInput();
-            let lastChar = currentInput.slice(-1);
-            let baseString = currentInput.slice(0, -1);
-            
-            const diacriticInfo = diacriticMap[button];
-            
-            if (lastChar && diacriticInfo.map[lastChar]) {
-                let newInput = baseString + diacriticInfo.map[lastChar];
-                this.keyboard.setInput(newInput);
-                this.keyboard.options.onChange(newInput);
-            } else {
-                let newInput = currentInput + diacriticInfo.symbol;
-                this.keyboard.setInput(newInput);
-                this.keyboard.options.onChange(newInput);
-            }
-            return;
+        const scheduleViewportUpdate = () => {
+            if (viewportUpdatePending) return;
+            viewportUpdatePending = true;
+            window.requestAnimationFrame(updateViewport);
+        };
+        window.visualViewport?.addEventListener('resize', scheduleViewportUpdate);
+        window.visualViewport?.addEventListener('scroll', scheduleViewportUpdate);
+        window.addEventListener('resize', scheduleViewportUpdate);
+        this.input.addEventListener('focus', scheduleViewportUpdate);
+        // Entering XR can resize the HUD independently of the browser viewport.
+        if (typeof ResizeObserver !== 'undefined') {
+            this.hudResizeObserver = new ResizeObserver(scheduleViewportUpdate);
+            this.hudResizeObserver.observe(this.container.parentElement);
         }
-
-        if (button === "{close}") {
-            this.hideKeyboard(keyboardWrapper);
-            return;
-        }
-        if (button === "{enter}") {
-            this.handleTextSubmit();
-            this.hideKeyboard(keyboardWrapper);
-            return;
-        }
-        if (button === "{shift}") {
-            const currentLayout = this.keyboard.options.layoutName;
-            const shiftToggle = currentLayout === "default" ? "shift" : "default";
-            this.keyboard.setOptions({ layoutName: shiftToggle });
-            return;
-        }
-        if (button === "{numbers}") {
-            this.keyboard.setOptions({ layoutName: "numbers" });
-            return;
-        }
-        if (button === "{abc}") {
-            this.keyboard.setOptions({ layoutName: "default" });
-            return;
-        }
-    }
-
-    hideKeyboard(keyboardWrapper) {
-        keyboardWrapper.style.display = "none";
-        this.input.disabled = false;
-        this.container.classList.remove("keyboard-open");
-        
-        if (this.input.innerText.trim() === "") {
-            this.input.innerText = t('chat.placeholder');
-        }
+        scheduleViewportUpdate();
     }
 
     async handleTextSubmit() {
-        const prompt = this.input.innerText.trim(); 
+        const prompt = this.input.value.trim();
         
-        if (!prompt || prompt === t('chat.placeholder') || !this.activeCharacter) return;
+        if (!prompt || !this.activeCharacter || this.isSubmitting || this.isComposing) return;
+        this.input.blur();
         
         const originalText = this.submitBtn.innerText;
         this.setLoadingState(true, "...", false);
@@ -281,10 +174,33 @@ export class ChatController {
         }
     }
 
+    async prepareMicrophone() {
+        if (!this.recognition || this.microphoneChecked) {
+            return this.microphoneReady;
+        }
+        this.microphoneChecked = true;
+        if (!navigator.mediaDevices?.getUserMedia) {
+            return false;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach((track) => track.stop());
+            this.microphoneReady = true;
+        } catch (error) {
+            console.warn('Microphone permission unavailable:', error);
+            this.microphoneReady = false;
+        }
+        return this.microphoneReady;
+    }
+
     handleVoiceSubmit() {
         if (!this.recognition) return;
         if (this.isListening) {
             this.recognition.stop();
+            return;
+        }
+        if (!this.microphoneReady) {
+            typewriterEffect(this.output, t('chat.microphoneUnavailable'), 25);
             return;
         }
 
@@ -303,8 +219,7 @@ export class ChatController {
     handleSpeechResult(event) {
         const transcript = event.results[0][0].transcript.trim();
         if (!transcript) return;
-        this.input.innerText = transcript;
-        this.keyboard.setInput(transcript);
+        this.input.value = transcript;
         this.handleTextSubmit();
     }
 
@@ -364,15 +279,12 @@ export class ChatController {
     }
 
     resetInput() {
-        this.input.innerText = t('chat.placeholder');
-        this.keyboard.clearInput();
-        
-        const keyboardWrapper = document.getElementById("keyboard-wrapper");
-        this.hideKeyboard(keyboardWrapper);
+        this.input.value = '';
     }
 
     setLoadingState(isLoading, btnText, isVoice = false) {
-        this.input.style.pointerEvents = isLoading ? "none" : "auto";
+        this.isSubmitting = isLoading;
+        this.input.readOnly = isLoading;
         this.input.style.opacity = isLoading ? "0.6" : "1"; 
         
         this.submitBtn.disabled = isLoading;

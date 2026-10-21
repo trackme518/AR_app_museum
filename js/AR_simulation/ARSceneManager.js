@@ -22,6 +22,9 @@ export class ARSceneManager {
 
         this.isSelectionEnabled = true;
         this.suppressSelectUntil = 0;
+        this.wakeLock = null;
+        this.endSessionPromise = null;
+        this.reloadScheduled = false;
         
         this.init();
     }
@@ -30,7 +33,7 @@ export class ARSceneManager {
         // UI taps can also emit an XR select event. Suppress the resulting
         // raycast so closing/using the chat overlay cannot reselect a
         // character behind it.
-        const uiSelector = '#ai-container, #keyboard-wrapper, #exit-ar-btn, #ARButton, #scenario-select-wrapper';
+        const uiSelector = '#ai-container, #exit-ar-btn, #ARButton, #scenario-select-wrapper';
         const isUiTarget = (target) => target instanceof Element && Boolean(target.closest(uiSelector));
         document.addEventListener('pointerdown', (event) => {
             if (isUiTarget(event.target)) {
@@ -64,9 +67,17 @@ export class ARSceneManager {
 
         // Handle viewport changes
         window.addEventListener('resize', () => {
+            // XR owns its render dimensions; keyboard resizing only affects the DOM overlay.
+            if (this.renderer.xr.isPresenting) return;
             this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && this.renderer.xr.isPresenting) {
+                this.requestWakeLock();
+            }
         });
 
         // Start render loop
@@ -91,7 +102,9 @@ export class ARSceneManager {
             // Marker-based placement requires image tracking to be enabled.
             requiredFeatures: ['image-tracking'],
             optionalFeatures: ['dom-overlay', 'hit-test', 'anchors'],
-            domOverlay: { root: document.body },
+            // Keep the HTML HUD separate from the renderer canvas, which is
+            // attached to document.body and rendered through the XR layer.
+            domOverlay: { root: document.getElementById('ar-container') },
         };
         if (trackedImages.length > 0) sessionOptions.trackedImages = trackedImages;
         const arBtn = ARButton.createButton(this.renderer, sessionOptions);
@@ -170,7 +183,32 @@ export class ARSceneManager {
         wrapper.appendChild(box);
     }
 
+    async requestWakeLock() {
+        if (!('wakeLock' in navigator) || this.wakeLock || document.visibilityState !== 'visible') {
+            return;
+        }
+        try {
+            this.wakeLock = await navigator.wakeLock.request('screen');
+            this.wakeLock.addEventListener('release', () => {
+                this.wakeLock = null;
+            }, { once: true });
+        } catch (error) {
+            console.warn('Screen wake lock unavailable:', error);
+        }
+    }
+
+    async releaseWakeLock() {
+        const wakeLock = this.wakeLock;
+        this.wakeLock = null;
+        try {
+            await wakeLock?.release();
+        } catch (error) {
+            console.warn('Screen wake lock release failed:', error);
+        }
+    }
+
     async onSessionStart() {
+        this.requestWakeLock();
         queueMicrotask(() => {
             const button = document.getElementById('ARButton');
             if (button) {
@@ -188,11 +226,16 @@ export class ARSceneManager {
         }
         try {
             const viewerSpace = await session.requestReferenceSpace('viewer');
-            this.hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+            if (this.reloadScheduled || this.endSessionPromise) return;
+            const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+            if (this.reloadScheduled || this.endSessionPromise) return;
+            this.hitTestSource = hitTestSource;
         } catch (error) {
             // Marker placement can still work when this runtime lacks hit testing.
             console.warn('Surface hit testing is unavailable:', error);
         }
+
+        if (this.reloadScheduled || this.endSessionPromise) return;
 
         // Resume all background media when entering AR
         this.videos.forEach((video) => {
@@ -206,21 +249,22 @@ export class ARSceneManager {
     }
 
     onSessionEnd() {
-        queueMicrotask(() => {
-            const button = document.getElementById('ARButton');
-            if (button) {
-                button.dataset.i18n = 'ar.start';
-                button.textContent = t('ar.start');
+        if (this.reloadScheduled) return;
+        this.reloadScheduled = true;
+        this.renderer.setAnimationLoop(null);
+        this.isSelectionEnabled = false;
+        this.videos.forEach(video => video.pause());
+        this.releaseWakeLock();
+
+        // The session owns hit tests and anchors; ending it releases them.
+        // Do not call XR APIs or dispose GPU resources during its end event.
+        // A new task lets all native/Three.js end listeners finish first.
+        setTimeout(async () => {
+            if (this.endSessionPromise) {
+                await this.endSessionPromise;
             }
-        });
-        // Ending/resetting the session means its world coordinate system is lost.
-        this.videos.forEach(v => v.pause());
-        this.hitTestSource?.cancel();
-        this.hitTestSource = null;
-        this.hitTestPose = null;
-        this.sessionSelectHandler = null;
-        this.referenceSpace = null;
-        this.resetPlacements();
+            window.location.reload();
+        }, 0);
     }
 
     handleSelect(frame) {
@@ -487,8 +531,14 @@ export class ARSceneManager {
     }
 
     exitAR() {
-        if (this.renderer.xr.getSession()) {
-            this.renderer.xr.getSession().end();
-        }
+        if (this.endSessionPromise || this.reloadScheduled) return;
+        const session = this.renderer.xr.getSession();
+        if (!session) return;
+
+        this.endSessionPromise = session.end().catch(error => {
+            // Never navigate away while a failed end request may leave XR active.
+            this.endSessionPromise = null;
+            console.error('Unable to end AR session:', error);
+        });
     }
 }

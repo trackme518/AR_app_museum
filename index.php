@@ -21,7 +21,6 @@ $launcharKey = trim((string)($config['launchar']['app_key'] ?? ''));
     <!--<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>-->
 
-    <link rel="stylesheet" href="/third_party/simple-keyboard/index.css">
     <link rel="stylesheet" href="/css/ARSimulation.css?v=<?php echo filemtime(__DIR__ . '/css/ARSimulation.css'); ?>">
 
 <?php if ($launcharKey !== ''): ?>
@@ -35,8 +34,6 @@ $launcharKey = trim((string)($config['launchar']['app_key'] ?? ''));
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
-    <!-- Virtual keyboard library (vendored, see third_party/simple-keyboard) -->
-    <script src="/third_party/simple-keyboard/index.js"></script>
 
     <?php include __DIR__ . '/templates/navbar.php'; ?>
     
@@ -80,19 +77,16 @@ $launcharKey = trim((string)($config['launchar']['app_key'] ?? ''));
             <div id="ai-container" class="hidden">
                 <button id="hide-ai-btn">X</button>
                 <p id="ai-response"></p>
-                <button type="button" id="ai-chat-input" class="fake-input" data-i18n="chat.placeholder">Type a message...</button>
-                <button id="ai-submit-btn" data-i18n="chat.send">Send</button>
-                <button id="stt-btn" data-i18n="chat.speak">Speak</button>
-                <button type="button" id="tts-toggle-btn" aria-pressed="false" data-i18n-aria-label="chat.enableSpeech" data-i18n-title="chat.speechOff" aria-label="Turn automatic speech on" title="Automatic speech is off">🔇</button>
+                <textarea id="ai-chat-input" rows="2" inputmode="text" enterkeyhint="send" autocapitalize="sentences" autocorrect="on" spellcheck="true" data-i18n-placeholder="chat.placeholder" data-i18n-aria-label="chat.placeholder" placeholder="Type a message..." aria-label="Type a message..."></textarea>
+                <div class="ai-actions">
+                    <button type="button" id="tts-toggle-btn" aria-pressed="false" data-i18n-aria-label="chat.enableSpeech" data-i18n-title="chat.speechOff" aria-label="Turn automatic speech on" title="Automatic speech is off">🔇</button>
+                    <button id="stt-btn" data-i18n="chat.speak">Speak</button>
+                    <button id="ai-submit-btn" data-i18n="chat.send">Send</button>
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- virtual keyboard container (it does not belong to page content so it is outside of main) -->
-    <div id="keyboard-wrapper">
-        <div class="simple-keyboard"></div>
-    </div>
-    
     <script>
         // Global error surfacing for on-device debugging (helps without Safari inspector)
         (function () {
