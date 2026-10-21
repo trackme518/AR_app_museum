@@ -211,3 +211,5 @@ To check the state of the build pipeline with this command:
 gh run list --repo trackme518/AR_app_museum --workflow=docker-image.yml --limit 3
 ```
 
+## STT / TTS
+The app supports speech to text and text to speech using WebSpeech API, so it uses the native audio engine of the device. This is can be either local in case of iOS or online in case of Android (usually through Google) but it can also be local based on the user settings and installed audio engines and languages. Unfortunetely, currently the launchar AppClip does not expose properly the privacy decalartion so it will crash on microiphone access request, see [issue](https://github.com/Variant3d/v-launch-sdk/issues/1) I have reported. For now, we simply detect the launchar agent string and do not require the microphone access, this means that speech to text is not working on iOS, but you will still get text to speech. Hopefully, Apple will implement proper webXR support as other major web browsers - send request to Apple to fix this if you care.
