@@ -32,7 +32,7 @@ RUN apt-get update \
         libxml2-dev \
         libzip-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j"$(nproc)" curl gd mbstring pdo_mysql zip opcache \
+    && docker-php-ext-install -j"$(nproc)" curl gd mbstring pdo_mysql zip \
     && a2enmod headers rewrite \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
