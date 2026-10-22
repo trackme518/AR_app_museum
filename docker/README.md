@@ -2,7 +2,7 @@
 
 The deployment consists of one Compose stack:
 
-- **App stack** (`docker/compose.yaml`): Apache with PHP 8.3 and MariaDB 11.8
+- **App stack** (`docker/compose.yaml`): Apache with PHP 8.5.12 and MariaDB 11.8
   LTS. MariaDB stores both application data and native RAG vectors; no
   additional vector server is required.
 - **TLS/routing**: not managed by this repository. On a VPS, an existing

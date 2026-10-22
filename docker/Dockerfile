@@ -15,7 +15,7 @@ WORKDIR /build/app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM php:8.3-apache
+FROM php:8.5.12-apache
 
 ARG APP_VERSION=v1.0
 ENV APP_VERSION=${APP_VERSION}
